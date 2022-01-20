@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v2.5.0
         with:
           java-version: '17'
           distribution: 'adopt'
@@ -26,7 +26,7 @@ jobs:
           username: ${{ secrets.NEXUS_USER }}
           password: ${{ secrets.NEXUS_PASSWORD }}
           format: maven2
-          repository: maven-snapshots
-          coordinates: groupId=com.edgeclusters.academy artifactId=service-a version=0.0.1-SNAPSHOT
+          repository: maven-releases
+          coordinates: groupId=com.edgeclusters.academy artifactId=service-a version=0.0.1
           assets: extension=jar
-          filename: ./target/service-a-0.0.1-SNAPSHOT.jar
+          filename: ./target/service-a-0.0.1.jar

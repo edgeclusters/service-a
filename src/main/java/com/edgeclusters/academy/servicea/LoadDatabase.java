@@ -14,8 +14,12 @@ class LoadDatabase {
   CommandLineRunner initDatabase(EmployeeRepository repository) {
 
     return args -> {
-      log.info("Preloading " + repository.save(new Employee("Bilbo Baggins", "burglar")));
-      log.info("Preloading " + repository.save(new Employee("Frodo Baggins", "thief")));
+      log.info("Preloading " + repository.save(new Employee("Josef Novák", "zámečník")));
+      log.info("Preloading " + repository.save(new Employee("Alois Dvořák", "truhlář")));
+      log.info("Preloading " + repository.save(new Employee("Antonín Souček", "pokrývač")));
+      log.info("Preloading " + repository.save(new Employee("Oldřich Černý", "klempíř")));
+      log.info("Preloading " + repository.save(new Employee("Eduard Svoboda", "zedník")));
+      log.info("Preloading " + repository.save(new Employee("Jiří Kučera", "řezník")));
     };
   }
 }

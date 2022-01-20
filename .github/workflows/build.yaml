@@ -1,0 +1,32 @@
+name: service-a maven build
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+          cache: maven
+
+      - name: Build with Maven
+        run: mvn package
+
+      - name: Nexus Repo Publish
+        uses: sonatype-nexus-community/nexus-repo-github-action@master
+        with:
+          serverUrl: http://nexus.edgeclusters.com
+          username: ${{ secrets.NEXUS_USER }}
+          password: ${{ secrets.NEXUS_PASSWORD }}
+          format: maven2
+          repository: maven-snapshots
+          coordinates: groupId=com.edgeclusters.academy artifactId=service-a version=0.0.1-SNAPSHOT
+          assets: extension=jar
+          filename: ./target/service-a-0.0.1-SNAPSHOT.jar

@@ -1,0 +1,60 @@
+name: build and deploy snapshot
+
+on: 
+  push:
+    branches:
+      - 'feature/**'
+  workflow_dispatch:
+
+env:
+  SERVICE_NAME: service-a
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      ###################################################
+      ## load commmon environment
+      ###################################################
+      - name: Checkout common repo
+        uses: actions/checkout@v2
+        with:
+          repository: edgeclusters/academy-common
+          path: common
+          token: ${{ secrets.ACCESS_TOKEN }}
+
+      - name: Load common configuration values
+        run: cat common/config.env >> $GITHUB_ENV
+
+      - uses: actions/checkout@v2
+        with:
+          path: app
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2.5.0
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+          cache: maven
+
+      - name: Build with Maven
+        run: mvn package
+        with:
+          path: app
+
+      - name: Prepare maven settings
+        run: |
+          mkdir ~/.m2
+          cp common/maven/settings.xml ~/.m2/
+          echo "<settingsSecurity><master>${{ secrets.MAVEN_MASTER_PASSWORD }}</master></settingsSecurity>" > ~/.m2/settings-security.xml
+
+      - name: Upload to Nexus
+        run: |
+          export APP_JAR=$(ls -1 app/target/${{ env.SERVICE_NAME }}-*.jar)
+          mvn deploy:deploy-file \
+          -Durl=${{ env.NEXUS_SNAPSHOTS_REPO_URL }} \
+          -DrepositoryId=nexus-snapshots \
+          -Dfile=app/target/$APP_JAR \
+          -DgeneratePom=false \
+          -DpomFile=app/pom.xml

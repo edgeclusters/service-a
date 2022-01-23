@@ -28,7 +28,8 @@ jobs:
           username: ${{ secrets.NEXUS_USER }}
           password: ${{ secrets.NEXUS_PASSWORD }}
           format: maven2
-          repository: maven-releases
-          coordinates: groupId=com.edgeclusters.academy artifactId=service-a version=0.0.2
+          # repository: maven-releases
+          repository: maven-snapshots
+          coordinates: groupId=com.edgeclusters.academy artifactId=service-a version=0.0.1-SNAPSHOT
           assets: extension=jar
-          filename: ./target/service-a-0.0.2.jar
+          filename: ./target/service-a-0.0.1-SNAPSHOT.jar

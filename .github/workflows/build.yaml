@@ -2,6 +2,8 @@ name: service-a maven build
 
 on: 
   push:
+    branches:
+      - develop
   workflow_dispatch:
 
 jobs:

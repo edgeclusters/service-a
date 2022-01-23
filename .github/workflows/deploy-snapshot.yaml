@@ -8,6 +8,7 @@ on:
 
 env:
   SERVICE_NAME: service-a
+  MAVEN_SETTINGS_SECURITY: "<settingsSecurity><master>${{ secrets.MAVEN_MASTER_PASSWORD }}</master></settingsSecurity>"
 
 jobs:
   build:
@@ -47,7 +48,7 @@ jobs:
         run: |
           mkdir ~/.m2
           cp common/maven/settings.xml ~/.m2/
-          echo "<settingsSecurity><master>${{ secrets.MAVEN_MASTER_PASSWORD }}</master></settingsSecurity>" > ~/.m2/settings-security.xml
+          echo "${{ env.MAVEN_SETTINGS_SECURITY }}" > ~/.m2/settings-security.xml
 
       - name: Upload to Nexus
         run: |

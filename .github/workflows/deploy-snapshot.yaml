@@ -46,8 +46,8 @@ jobs:
 
       - name: Prepare maven settings
         run: |
-          mkdir ~/.m2
-          cp common/maven/settings.xml ~/.m2/
+          # mkdir ~/.m2
+          # cp common/maven/settings.xml ~/.m2/
           echo "${{ env.MAVEN_SETTINGS_SECURITY }}" > ~/.m2/settings-security.xml
 
       - name: Upload to Nexus
@@ -58,4 +58,5 @@ jobs:
           -DrepositoryId=nexus-snapshots \
           -Dfile=app/target/$APP_JAR \
           -DgeneratePom=false \
-          -DpomFile=app/pom.xml
+          -DpomFile=app/pom.xml \
+          --settings common/maven/settings.xml

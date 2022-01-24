@@ -44,10 +44,8 @@ jobs:
           cd app
           mvn package
 
-      - name: Prepare maven settings
+      - name: Prepare maven settings-security.xml
         run: |
-          # mkdir ~/.m2
-          # cp common/maven/settings.xml ~/.m2/
           echo "${{ env.MAVEN_SETTINGS_SECURITY }}" > ~/.m2/settings-security.xml
 
       - name: Upload to Nexus
@@ -56,7 +54,7 @@ jobs:
           mvn deploy:deploy-file \
           -Durl=${{ env.NEXUS_SNAPSHOTS_REPO_URL }} \
           -DrepositoryId=nexus-snapshots \
-          -Dfile=app/target/$APP_JAR \
+          -Dfile=$APP_JAR \
           -DgeneratePom=false \
           -DpomFile=app/pom.xml \
           --settings common/maven/settings.xml

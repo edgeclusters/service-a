@@ -52,8 +52,10 @@ jobs:
 
       - name: Get service name and version
         run: |
-          echo "SERVICE_NAME=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.artifactId}' --non-recursive exec:exec)" >> $GITHUB_ENV
-          echo "SERVICE_VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)" >> $GITHUB_ENV
+          export SERVICE_NAME=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.artifactId}' --non-recursive exec:exec)"
+          export SERVICE_VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)"
+          echo "SERVICE_NAME=$SERVICE_NAME" >> $GITHUB_ENV
+          echo "SERVICE_VERSION=$SERVICE_VERSION" >> $GITHUB_ENV
 
       - name: Upload to Nexus
         run: |

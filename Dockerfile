@@ -1,4 +1,4 @@
-FROM reg.edgeclusters.com/docker-hub-proxy/library/openjdk:17-jdk-alpine
+FROM reg.edgeclusters.com/docker-hub-proxy/library/openjdk:17-jdk-slim-buster
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
 ARG JAR_FILE=target/*.jar

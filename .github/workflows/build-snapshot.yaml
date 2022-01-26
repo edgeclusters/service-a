@@ -52,8 +52,8 @@ jobs:
 
       - name: Get service name and version
         run: |
-          export SERVICE_NAME=$(mvn --file app/pom.xml --quiet -Dexec.executable=echo -Dexec.args='${project.artifactId}' --non-recursive exec:exec)"
-          export SERVICE_VERSION=$(mvn --file app/pom.xml --quiet -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)"
+          export SERVICE_NAME=$(mvn --file app/pom.xml --quiet -Dexec.executable=echo -Dexec.args='${project.artifactId}' --non-recursive exec:exec)
+          export SERVICE_VERSION=$(mvn --file app/pom.xml --quiet -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
           echo "SERVICE_NAME=$SERVICE_NAME" >> $GITHUB_ENV
           echo "SERVICE_VERSION=$SERVICE_VERSION" >> $GITHUB_ENV
 

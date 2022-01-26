@@ -93,6 +93,6 @@ jobs:
           build-args: BUILD_ALL_CLIS=false
           platforms: ${{ env.TARGET_PLATFORMS }}
           push: true
-          tags: ${{ env.IMAGE_FQN }}:${{ env.ARGOCD_VERSION }}
+          tags: ${{ env.IMAGE_FQN }}:${{ env.SERVICE_VERSION }}
           # cache-from: type=registry,ref=${{ env.IMAGE_FQN }}:buildcache
           # cache-to: type=registry,ref=${{ env.IMAGE_FQN }}:buildcache,mode=max

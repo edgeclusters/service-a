@@ -86,13 +86,12 @@ jobs:
           username: ${{ env.CONTAINER_REGISTRY_USER }}
           password: ${{ secrets.CONTAINER_REGISTRY_PASSWORD_PULL }}
 
-      - name: Login to registry (push)
-        uses: docker/login-action@v1
-        with:
-          registry: ${{ env.CONTAINER_REGISTRY_HOSTNAME }}
-          username: ${{ env.CONTAINER_REGISTRY_USER_PUSH }}
-          password: ${{ secrets.CONTAINER_REGISTRY_PASSWORD_PUSH }}
-
+      # - name: Login to registry (push)
+      #   uses: docker/login-action@v1
+      #   with:
+      #     registry: ${{ env.CONTAINER_REGISTRY_HOSTNAME }}
+      #     username: ${{ env.CONTAINER_REGISTRY_USER_PUSH }}
+      #     password: ${{ secrets.CONTAINER_REGISTRY_PASSWORD_PUSH }}
 
       - name: Build and push
         uses: docker/build-push-action@v2
@@ -102,5 +101,6 @@ jobs:
           platforms: ${{ env.TARGET_PLATFORMS }}
           push: true
           tags: ${{ env.IMAGE_FQN }}:${{ env.SERVICE_VERSION }}
+          cache-from: type=registry,ref=${{ env.IMAGE_FQN }}:latest
           # cache-from: type=registry,ref=${{ env.IMAGE_FQN }}:buildcache
           # cache-to: type=registry,ref=${{ env.IMAGE_FQN }}:buildcache,mode=max

@@ -50,20 +50,10 @@ jobs:
         run: |
           echo "${{ env.MAVEN_SETTINGS_SECURITY }}" > ~/.m2/settings-security.xml
 
-      - name: Get maven project version
+      - name: Get service name and version
         run: |
-          export MVN_ARTIFACT=$(mvn -q \
-              -Dexec.executable=echo \
-              -Dexec.args='${project.artifactId}' \
-              --non-recursive \
-              exec:exec)
-          export MVN_VERSION=$(mvn -q \
-              -Dexec.executable=echo \
-              -Dexec.args='${project.version}' \
-              --non-recursive \
-              exec:exec)
-          echo "::set-output name=SERVICE_NAME::$MVN_ARTIFACT"
-          echo "::set-output name=SERVICE_VERSION::$MVN_VERSION"
+          echo "SERVICE_NAME=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.artifactId}' --non-recursive exec:exec)" >> $GITHUB_ENV
+          echo "SERVICE_VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)" >> $GITHUB_ENV
 
       - name: Upload to Nexus
         run: |

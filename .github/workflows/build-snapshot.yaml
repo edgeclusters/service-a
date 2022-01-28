@@ -93,9 +93,7 @@ jobs:
         uses: docker/metadata-action@v3
         with:
           # list of Docker images to use as base name for tags
-          images: |
-            name/app
-            ghcr.io/username/app
+          images: ${{ env.CONTAINER_REGISTRY_HOSTNAME }}/${{ env.IMAGE_REPOSITORY }}/${{ env.SERVICE_NAME }}
           # generate Docker tags based on the following events/attributes
           tags: |
             type=schedule
@@ -114,6 +112,7 @@ jobs:
           platforms: ${{ env.TARGET_PLATFORMS }}
           push: true
           tags: ${{ env.IMAGE_FQN }}:${{ env.SERVICE_VERSION }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ env.IMAGE_FQN }}:latest
           # cache-from: type=registry,ref=${{ env.IMAGE_FQN }}:buildcache
           # cache-to: type=registry,ref=${{ env.IMAGE_FQN }}:buildcache,mode=max

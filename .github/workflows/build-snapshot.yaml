@@ -1,9 +1,9 @@
 name: build snapshot
 
 on:
-  # push:
-  #   branches:
-  #     - "feature/**"
+  push:
+    branches:
+      - "feature/**"
   workflow_dispatch:
 
 env:
@@ -116,4 +116,3 @@ jobs:
           cache-from: type=registry,ref=${{ env.IMAGE_FQN }}:latest
           # cache-from: type=registry,ref=${{ env.IMAGE_FQN }}:buildcache
           # cache-to: type=registry,ref=${{ env.IMAGE_FQN }}:buildcache,mode=max
-${{ env.COMMIT_ID_SHORT }}

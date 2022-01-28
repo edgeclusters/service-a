@@ -9,7 +9,7 @@
 	</parent>
 	<groupId>com.edgeclusters.academy</groupId>
 	<artifactId>service-a</artifactId>
-	<version>0.0.2-SNAPSHOT</version>
+	<version>0.0.3-SNAPSHOT</version>
 	<name>service-a</name>
 	<description>EdgeClusters Academy demo service</description>
 	<properties>

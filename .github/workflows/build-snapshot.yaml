@@ -7,7 +7,6 @@ on:
   workflow_dispatch:
 
 env:
-  # SERVICE_NAME: service-a
   MAVEN_SETTINGS_SECURITY: "<settingsSecurity><master>${{ secrets.MAVEN_MASTER_PASSWORD }}</master></settingsSecurity>"
   IMAGE_REPOSITORY: academy
   TARGET_PLATFORMS: "linux/amd64,linux/arm64"

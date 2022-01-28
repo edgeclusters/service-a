@@ -12,6 +12,7 @@ jobs:
 
     steps:
     - run:
+        echo "----> ${{ github.ref_name }}"
         export REF=${{ github.ref_name }}
         echo "small=${REF,,}" >> $GITHUB_ENV
 

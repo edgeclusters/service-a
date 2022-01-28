@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - run:
+    - run: |
         echo "----> ${{ github.ref_name }}"
         REF="${{ github.ref_name }}" echo "small=${REF,,}" >> $GITHUB_ENV
 

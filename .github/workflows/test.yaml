@@ -13,7 +13,7 @@ jobs:
     steps:
     - run: |
         export RRR=${{ github.ref_name }}
-        echo "--->$RRR"
+        echo "--->${{ env.RRR }}"
         echo "small=${RRR,,}" >> $GITHUB_ENV
 
     - run: echo "XXXXXX ${{ env.small }}"

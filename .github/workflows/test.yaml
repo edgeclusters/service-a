@@ -11,10 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - run: |
-        export RRR=${{ github.ref_name }}
-        echo "--->${{ env.RRR }}"
-        echo "small=${RRR,,}" >> $GITHUB_ENV
+      - run: echo "small=${{ github.ref_name }}" >> $GITHUB_ENV
 
-    - run: echo "XXXXXX ${{ env.small }}"
-    - run: cat $GITHUB_ENV
+      - run: echo "XXXXXX ${{ env.small }}"
+      - run: cat $GITHUB_ENV

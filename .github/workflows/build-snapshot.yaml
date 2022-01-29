@@ -44,7 +44,11 @@ jobs:
       - name: Build with Maven
         run: |
           cd app
-          mvn package
+          mvn package --batch-mode --fail-at-end
+
+      - name: Publish Test Report
+        if: ${{ always() }}
+        uses: scacap/action-surefire-report@v1
 
       - name: Prepare maven settings-security.xml
         run: |

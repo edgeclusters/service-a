@@ -93,7 +93,7 @@ jobs:
         uses: docker/metadata-action@v3
         with:
           # list of Docker images to use as base name for tags
-          images: ${{ env.CONTAINER_REGISTRY_HOSTNAME }}/${{ env.IMAGE_REPOSITORY }}/${{ env.SERVICE_NAME }}
+          images: ${{ env.IMAGE_FQN }}
           # generate Docker tags based on the following events/attributes
           tags: |
             type=schedule
@@ -111,7 +111,8 @@ jobs:
           build-args: BUILD_ALL_CLIS=false
           platforms: ${{ env.TARGET_PLATFORMS }}
           push: true
-          tags: ${{ env.IMAGE_FQN }}:${{ env.SERVICE_VERSION }}
+          # tags: ${{ env.IMAGE_FQN }}:${{ env.SERVICE_VERSION }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ env.IMAGE_FQN }}:latest
           # cache-from: type=registry,ref=${{ env.IMAGE_FQN }}:buildcache

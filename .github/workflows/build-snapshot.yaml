@@ -111,8 +111,8 @@ jobs:
           build-args: BUILD_ALL_CLIS=false
           platforms: ${{ env.TARGET_PLATFORMS }}
           push: true
-          # tags: ${{ env.IMAGE_FQN }}:${{ env.SERVICE_VERSION }}
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ env.IMAGE_FQN }}:${{ env.SERVICE_VERSION }}
+          # tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ env.IMAGE_FQN }}:latest
           # cache-from: type=registry,ref=${{ env.IMAGE_FQN }}:buildcache

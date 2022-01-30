@@ -148,5 +148,5 @@ jobs:
           cd app/helm
           helm dependency update
           helm package --version ${{ env.SERVICE_VERSION }} --app-version ${{ env.SERVICE_VERSION }} .
-          # helm cm-push ${{ env.SERVICE_NAME }}-${{ env.SERVICE_VERSION }}.tgz ${{ env.HELM_REPO_NAME }}
+          helm cm-push ${{ env.SERVICE_NAME }}-${{ env.SERVICE_VERSION }}.tgz ${{ env.HELM_REPO_NAME }}
           # helm push ${{ env.SERVICE_NAME }}-${{ env.SERVICE_VERSION }}.tgz oci://${{ env.HELM_REGISTRY_HOSTNAME }}/chartrepo/${{ env.HELM_REPO_NAME }}

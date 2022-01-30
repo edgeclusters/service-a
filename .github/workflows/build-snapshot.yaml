@@ -148,4 +148,4 @@ jobs:
           cd app/helm
           helm dependency update
           helm package --version ${{ env.SERVICE_VERSION }} --app-version ${{ env.SERVICE_VERSION }} .
-          helm push ${{ env.SERVICE_NAME }}-${{ env.SERVICE_version }}.tgz oci://${{ env.HELM_REGISTRY_BASE_URL }}/${{ env.HELM_REPO_NAME }}
+          helm push ${{ env.SERVICE_NAME }}-${{ env.SERVICE_VERSION }}.tgz oci://${{ env.HELM_REGISTRY_HOSTNAME }}/${{ env.HELM_REPO_NAME }}

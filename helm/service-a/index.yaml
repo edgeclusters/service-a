@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  service-a:
+  - apiVersion: v2
+    appVersion: 1.2.3
+    created: "2022-01-30T01:11:49.112660814+01:00"
+    description: A Helm chart for Kubernetes
+    digest: e90be6fc146001fe521e416746bad4a824dc110d7ef0a909e85c3c321f4426fe
+    name: service-a
+    type: application
+    urls:
+    - https://reg.edgeclusters.com/academy/service-a-0.1.0.tgz
+    version: 0.1.0
+generated: "2022-01-30T01:11:49.11127865+01:00"

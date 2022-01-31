@@ -1,7 +1,7 @@
 replicaCount: 2
 
 image:
-  repository: reg.edgeclusters.com/academy/service-a
+  repository: reg.edgeclusters.com/chartrepo/academy/service-a
   pullPolicy: Always
   tag: ""
 

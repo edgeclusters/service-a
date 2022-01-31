@@ -3,7 +3,7 @@ replicaCount: 2
 image:
   repository: reg.edgeclusters.com/academy/service-a
   pullPolicy: Always
-  tag: "0.0.3-SNAPSHOT"
+  tag: ""
 
 imagePullSecrets:
   - name: reg-edgeclusters-com

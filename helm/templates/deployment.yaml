@@ -29,6 +29,9 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
+          env:
+          - name: JAVA_TOOL_OPTIONS
+            value: '-Dlogging.level.com.farao.ws=DEBUG -Dlogging.level.com.farao.ws=DEBUG --logging.level.org.springframework=TRACE'
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

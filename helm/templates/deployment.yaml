@@ -44,13 +44,11 @@ spec:
           livenessProbe:
             httpGet:
               path: /actuator/health
-              port: http-actuator
-            # initialDelaySeconds: 60
+              port: http
           readinessProbe:
             httpGet:
               path: /actuator/health
-              port: http-actuator
-            # initialDelaySeconds: 60
+              port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}

@@ -8,7 +8,7 @@ image:
 imagePullSecrets:
   - name: reg-edgeclusters-com
 nameOverride: ""
-fullnameOverride: "service-a"
+fullnameOverride: ""
 
 serviceAccount:
   # Specifies whether a service account should be created

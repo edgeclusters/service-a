@@ -2,8 +2,8 @@ name: build snapshot
 
 on:
   push:
-    branches:
-      - "feature/**"
+    # branches:
+    #   - "feature/**"
   workflow_dispatch:
 
 env:

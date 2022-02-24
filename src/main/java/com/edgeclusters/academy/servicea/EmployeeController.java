@@ -31,8 +31,7 @@ class EmployeeController {
 		logger.info("GET all employees");
 		return repository.findAll();
 	}
-	// end::get-aggregate-root[]
-
+	
 	@Timed(value = "employees.create.time", description = "Time taken to create new employee")
 	@PostMapping("/employees")
 	Employee newEmployee(@RequestBody Employee newEmployee) {

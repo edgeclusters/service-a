@@ -14,23 +14,11 @@ env:
   CONTAINER_REGISTRY_ACADEMY_USER: robot-academy-pull-push
 
 jobs:
-  build:
+  maven-build:
+    name: Maven build
     runs-on: ubuntu-latest
 
     steps:
-      # ###################################################
-      # ## load commmon environment
-      # ###################################################
-      # - name: Checkout common repo
-      #   uses: actions/checkout@v2
-      #   with:
-      #     repository: edgeclusters/academy-common
-      #     path: common
-      #     token: ${{ secrets.COMMON_REPO_ACCESS_TOKEN }}
-
-      # - name: Load common configuration values
-      #   run: cat common/config.env >> $GITHUB_ENV
-
       - uses: actions/checkout@v2
 
       - name: Set up JDK 17
@@ -52,11 +40,27 @@ jobs:
           echo "SERVICE_VERSION=$SERVICE_VERSION" >> $GITHUB_ENV
           echo "COMMIT_ID_SHORT=$COMMIT_ID_SHORT" >> $GITHUB_ENV
 
+          echo "::debug::SERVICE_NAME: $SERVICE_NAME, SERVICE_VERSION: $SERVICE_VERSION, COMMIT_ID_SHORT: $COMMIT_ID_SHORT"
+
       - name: Build with Maven
         run: |
           mvn package --batch-mode --fail-at-end
 
-      - name: Upload application JAR 
+      - name: Package Helm chart
+        run: |
+          helm package \
+          --app-version ${{ env.SERVICE_VERSION }} \
+          --version ${{ env.SERVICE_VERSION }} \
+          helm
+
+      - name: Upload Helm chart
+        uses: actions/upload-artifact@v3
+        with:
+          name: chart.tgz
+          path: ${{ env.SERVICE_NAME }}-${{ env.SERVICE_VERSION }}.tgz
+          retention-days: 1
+
+      - name: Upload application JAR
         uses: actions/upload-artifact@v3
         with:
           name: app.jar
@@ -67,23 +71,121 @@ jobs:
         if: ${{ always() }}
         uses: scacap/action-surefire-report@v1.0.13
 
+  helm-upload:
+    needs: maven-build
+    name: Upload application JAR to Nexus
+    runs-on: ubuntu-latest
 
+    steps:
+      - name: Checkout common environment values
+        uses: actions/checkout@v2
+        with:
+          repository: edgeclusters/academy-common
+          path: common
+          token: ${{ secrets.COMMON_REPO_ACCESS_TOKEN }}
 
+      - name: Merge common environment values
+        run: cat common/config.env >> $GITHUB_ENV
 
-      # - name: Prepare maven settings-security.xml
+      - name: Download Helm chart archive
+        uses: actions/download-artifact@v3
+        with:
+          name: chart.tgz
+
+      - name: Login to registry (push)
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.CONTAINER_REGISTRY_HOSTNAME }}
+          username: ${{ env.HELM_REGISTRY_USER_PUSH }}
+          password: ${{ secrets.HELM_REGISTRY_PASSWORD }}
+
+      - name: Push Helm chart to Helm repository
+        run: helm push chart.tgz oci://${{ env.HELM_REGISTRY_BASE_URL }}/${{ env.HELM_REPO_NAME }}
+
+      # - name: Add helm repository
       #   run: |
-      #     echo "${{ env.MAVEN_SETTINGS_SECURITY }}" > ~/.m2/settings-security.xml
+      #     helm version
+      #     helm repo add \
+      #     --username=${{ env.HELM_REGISTRY_USER_PUSH }} \
+      #     --password=${{ secrets.HELM_REGISTRY_PASSWORD }} \
+      #     ${{ env.HELM_REPO_NAME }} \
+      #     ${{ env.HELM_REGISTRY_BASE_URL }}/${{ env.HELM_REPO_NAME }}
 
-      # - name: Upload to Nexus
+      # # - name: Login to registry (push)
+      # #   uses: docker/login-action@v1
+      # #   with:
+      # #     registry: ${{ env.CONTAINER_REGISTRY_HOSTNAME }}
+      # #     username: ${{ env.HELM_REGISTRY_USER_PUSH }}
+      # #     password: ${{ secrets.HELM_REGISTRY_PASSWORD }}
+
+      # - name: Publish Helm chart
       #   run: |
-      #     export APP_JAR=$(ls -1 app/target/${{ env.SERVICE_NAME }}-${{ env.SERVICE_VERSION }}.jar)
-      #     mvn deploy:deploy-file \
-      #     -Durl=${{ env.NEXUS_SNAPSHOTS_REPO_URL }} \
-      #     -DrepositoryId=nexus-snapshots \
-      #     -Dfile=$APP_JAR \
-      #     -DgeneratePom=false \
-      #     -DpomFile=app/pom.xml \
-      #     --settings common/maven/settings.xml
+      #     export HELM_EXPERIMENTAL_OCI=1
+      #     helm version
+      #     cd app/helm
+      #     helm dependency update
+      #     helm package --version ${{ env.SERVICE_VERSION }} --app-version ${{ env.SERVICE_VERSION }} .
+      #     helm plugin install https://github.com/chartmuseum/helm-push.git
+      #     helm cm-push ${{ env.SERVICE_NAME }}-${{ env.SERVICE_VERSION }}.tgz ${{ env.HELM_REPO_NAME }}
+      #     # helm push ${{ env.SERVICE_NAME }}-${{ env.SERVICE_VERSION }}.tgz oci://${{ env.HELM_REGISTRY_HOSTNAME }}/chartrepo/${{ env.HELM_REPO_NAME }}
+
+  nexus-upload:
+    needs: maven-build
+    name: Upload application JAR to Nexus
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout common environment values
+        uses: actions/checkout@v2
+        with:
+          repository: edgeclusters/academy-common
+          path: common
+          token: ${{ secrets.COMMON_REPO_ACCESS_TOKEN }}
+
+      - name: Merge common environment values
+        run: cat common/config.env >> $GITHUB_ENV
+
+      - name: Playing with workflow commands
+        id: app-jar-file-name
+        run: |
+          echo "::debug::Setting JAR_FILE output"
+          echo "::set-output name=JAR_FILE::app.jar"
+          echo "::warning::Remove this step in the future!"
+
+      - name: Download application JAR
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ steps.app-jar-file-name.outputs.JAR_FILE }}
+
+      - name: Prepare maven settings-security.xml
+        run: echo "${{ env.MAVEN_SETTINGS_SECURITY }}" > ~/.m2/settings-security.xml
+
+      - name: Upload to Nexus
+        run: |
+          mvn deploy:deploy-file \
+          -Durl=${{ env.NEXUS_SNAPSHOTS_REPO_URL }} \
+          -DrepositoryId=nexus-snapshots \
+          -Dfile=${{ steps.app-jar-file-name.outputs.JAR_FILE }} \
+          -DgeneratePom=false \
+          -DpomFile=app/pom.xml \
+          --settings common/maven/settings.xml
+
+  docker-image:
+    needs: maven-build
+    name: Build and push multiplatform container image
+    runs-on:
+      ubuntu-latest
+
+    steps:
+      - name: Checkout common environment values
+        uses: actions/checkout@v2
+        with:
+          repository: edgeclusters/academy-common
+          path: common
+          token: ${{ secrets.COMMON_REPO_ACCESS_TOKEN }}
+
+      - name: Merge common environment values
+        run: cat common/config.env >> $GITHUB_ENV
 
       # - run: echo "IMAGE_FQN=$(echo ${{ env.CONTAINER_REGISTRY_HOSTNAME }}/${{ env.IMAGE_REPOSITORY }}/${{ env.SERVICE_NAME }})" >> $GITHUB_ENV
 
@@ -135,29 +237,3 @@ jobs:
       #     # cache-from: type=registry,ref=${{ env.IMAGE_FQN }}:buildcache
       #     # cache-to: type=registry,ref=${{ env.IMAGE_FQN }}:buildcache,mode=max
 
-      # - name: Add helm repository
-      #   run: |
-      #     helm version
-      #     helm repo add \
-      #     --username=${{ env.HELM_REGISTRY_USER_PUSH }} \
-      #     --password=${{ secrets.HELM_REGISTRY_PASSWORD }} \
-      #     ${{ env.HELM_REPO_NAME }} \
-      #     ${{ env.HELM_REGISTRY_BASE_URL }}/${{ env.HELM_REPO_NAME }}
-
-      # # - name: Login to registry (push)
-      # #   uses: docker/login-action@v1
-      # #   with:
-      # #     registry: ${{ env.CONTAINER_REGISTRY_HOSTNAME }}
-      # #     username: ${{ env.HELM_REGISTRY_USER_PUSH }}
-      # #     password: ${{ secrets.HELM_REGISTRY_PASSWORD }}
-
-      # - name: Publish Helm chart
-      #   run: |
-      #     export HELM_EXPERIMENTAL_OCI=1
-      #     helm version
-      #     cd app/helm
-      #     helm dependency update
-      #     helm package --version ${{ env.SERVICE_VERSION }} --app-version ${{ env.SERVICE_VERSION }} .
-      #     helm plugin install https://github.com/chartmuseum/helm-push.git
-      #     helm cm-push ${{ env.SERVICE_NAME }}-${{ env.SERVICE_VERSION }}.tgz ${{ env.HELM_REPO_NAME }}
-      #     # helm push ${{ env.SERVICE_NAME }}-${{ env.SERVICE_VERSION }}.tgz oci://${{ env.HELM_REGISTRY_HOSTNAME }}/chartrepo/${{ env.HELM_REPO_NAME }}

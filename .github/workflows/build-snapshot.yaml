@@ -52,6 +52,7 @@ jobs:
 
       - name: Build with Maven
         run: |
+          echo "app version ====> $APP_VERSION, ${{ env.APP_VERSION }}"
           cd app
           mvn package --batch-mode --fail-at-end
 

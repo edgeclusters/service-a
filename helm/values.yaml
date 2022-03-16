@@ -10,6 +10,13 @@ imagePullSecrets:
 nameOverride: ""
 fullnameOverride: ""
 
+env:
+  OTEL_METRICS_EXPORTER: none
+  OTEL_RESOURCE_ATTRIBUTES: service.name=myservice
+  OTEL_TRACES_EXPORTER: jaeger
+  OTEL_EXPORTER_JAEGER_ENDPOINT: http://gloglo:14250
+  OTEL_EXPORTER_JAEGER_TIMEOUT: 10000
+
 serviceAccount:
   # Specifies whether a service account should be created
   create: true

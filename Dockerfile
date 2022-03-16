@@ -6,13 +6,13 @@ RUN apk --quiet update \
     && apk --quiet add wget \
     && rm -rf /var/cache/apt/*
 
-RUN wget --no-verbose --output-file /opentelemetry-javaagent.jar \
-    https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v${OTEL_AGENT_VERSION}/opentelemetry-javaagent.jar
+WORKDIR /
+
+RUN wget --no-verbose https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v${OTEL_AGENT_VERSION}/opentelemetry-javaagent.jar
 
 
 FROM reg.edgeclusters.com/docker-hub-proxy/library/openjdk:17-jdk-slim-buster
 
-ARG APP_NAME=service-a
 ARG APP_USER=spring
 ARG APP_USER_UID=1000
 ARG APP_USER_GID=1000

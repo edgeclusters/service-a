@@ -12,7 +12,7 @@ fullnameOverride: ""
 
 env:
   OTEL_METRICS_EXPORTER: none
-  OTEL_RESOURCE_ATTRIBUTES: service.name=myservice
+  OTEL_RESOURCE_ATTRIBUTES: service.name=service-a
   OTEL_TRACES_EXPORTER: jaeger
   OTEL_EXPORTER_JAEGER_ENDPOINT: http://gloglo:14250
   OTEL_EXPORTER_JAEGER_TIMEOUT: 10000

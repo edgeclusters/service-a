@@ -9,9 +9,9 @@ on:
 env:
   MAVEN_SETTINGS_SECURITY: "<settingsSecurity><master>${{ secrets.MAVEN_MASTER_PASSWORD }}</master></settingsSecurity>"
   IMAGE_REPOSITORY: academy
+  # HELM_REPO_NAME: academy
   TARGET_PLATFORMS: "linux/amd64,linux/arm64"
   CONTAINER_REGISTRY_ACADEMY_USER: robot-academy-pull-push
-  HELM_REPO_NAME: academy
 
 jobs:
   build:
@@ -41,6 +41,12 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           cache: maven
+
+      - name: Get app version from pom.xml
+        run: |
+          cd app
+          echo "APP_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+          echo "app version ====> $APP_VERSION, ${{ env.APP_VERSION }}"
 
       - name: Build with Maven
         run: |

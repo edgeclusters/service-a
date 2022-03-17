@@ -59,6 +59,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+
+
+      - run: echo "${{ needs.common.outputs.nexusUser }}"
+
+
       - name: Set up JDK 17
         uses: actions/setup-java@v2
         with:
@@ -130,7 +135,7 @@ jobs:
           --settings common/maven/settings.xml
 
   docker-image:
-    needs: maven-build
+    needs: [common, maven-build]
     name: Build and push multiplatform container image
     runs-on: ubuntu-latest
 
@@ -140,8 +145,8 @@ jobs:
       - name: Download application JAR form Nexus
         run: |
           curl -sSL -X GET \
-          -u ${{ needs.maven-build.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }} \
-          -G "${{ needs.maven-build.outputs.nexusBaseUrl }}/service/rest/v1/search/assets" \
+          -u ${{ needs.common.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }} \
+          -G "${{ needs.common.outputs.nexusBaseUrl }}/service/rest/v1/search/assets" \
           -d repository=maven-snapshots \
           -d maven.groupId=${{ needs.maven-build.outputs.appGroupId }} \
           -d maven.artifactId=${{ needs.maven-build.outputs.appArtifactId }} \

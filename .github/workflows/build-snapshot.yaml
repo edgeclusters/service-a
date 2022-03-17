@@ -140,7 +140,7 @@ jobs:
       - name: Download application JAR form Nexus
         run: |
           curl -sSL -X GET \
-          -u ${{ needs.maven-build.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }}\
+          -u ${{ needs.common.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }}\
           -G "${{ needs.common.outputs.nexusBaseUrl }}/service/rest/v1/search/assets" \
           -d repository=maven-snapshots \
           -d maven.groupId=${{ needs.maven-build.outputs.appGroupId }} \

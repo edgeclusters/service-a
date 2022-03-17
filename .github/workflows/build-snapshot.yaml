@@ -140,7 +140,7 @@ jobs:
         run: |
           mvn deploy:deploy-file \
           -Durl=${{ needs.common.outputs.nexusSnapshotsRepoUrl }} \
-          -DrepositoryId=maven-snapshots \
+          -DrepositoryId=nexus-snapshots \
           -Dfile=target/${{ steps.service-metadata.outputs.serviceName }}-${{ steps.service-metadata.outputs.serviceVersion }}.jar \
           -DgeneratePom=false \
           -DpomFile=pom.xml \

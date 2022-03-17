@@ -21,6 +21,8 @@ jobs:
       containerRegistryHost: ${{ steps.common.outputs.containerRegistryHost }}
       helmRegistryHost: ${{ steps.common.outputs.helmRegistryHost }}
       helmRegistryPushUser: ${{ steps.common.outputs.helmRegistryPushUser }}
+      nexusBaseUrl: ${{ steps.common.outputs.nexusBaseUrl }}
+      nexusUser: ${{ steps.common.outputs.nexusUser }}
       nexusSnapshotsRepoUrl: ${{ steps.common.outputs.nexusSnapshotsRepoUrl }}
       nexusReleasesRepoUrl: ${{ steps.common.outputs.nexusReleasesRepoUrl }}
 
@@ -38,6 +40,8 @@ jobs:
           echo "::set-output name=containerRegistryHost::$CONTAINER_REGISTRY_HOSTNAME"
           echo "::set-output name=helmRegistryHost::$HELM_REGISTRY_HOSTNAME"
           echo "::set-output name=helmRegistryPushUser::$HELM_REGISTRY_USER_PUSH"
+          echo "::set-output name=nexusBaseUrl::$NEXUS_BASE_URL"
+          echo "::set-output name=nexusUser::$NEXUS_USER"
           echo "::set-output name=nexusSnapshotsRepoUrl::$NEXUS_SNAPSHOTS_REPO_URL"
           echo "::set-output name=nexusReleasesRepoUrl::$NEXUS_RELEASES_REPO_URL"
 
@@ -47,9 +51,10 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      serviceName: ${{ steps.service-metadata.outputs.serviceName }}
-      serviceVersion: ${{ steps.service-metadata.outputs.serviceVersion }}
-      commitId: ${{ steps.service-metadata.outputs.commitId }}
+      appGroupId: ${{ steps.service-metadata.outputs.appGroupId }}
+      appArtifactId: ${{ steps.service-metadata.outputs.appArtifactId }}
+      appVersion: ${{ steps.service-metadata.outputs.appVersion }}
+      appCommitId: ${{ steps.service-metadata.outputs.appCommitId }}
 
     steps:
       - uses: actions/checkout@v2
@@ -64,15 +69,17 @@ jobs:
       - name: Get application metadata from pom.xml
         id: service-metadata
         run: |
-          export SERVICE_NAME=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
-          export SERVICE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          export COMMIT_ID=$(git rev-parse --short "$GITHUB_SHA")
+          export APP_GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout)
+          export APP_ARTIFACT_ID=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
+          export APP_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          export APP_COMMIT_ID=$(git rev-parse --short "$GITHUB_SHA")
 
-          echo "::set-output name=serviceName::$SERVICE_NAME"
-          echo "::set-output name=serviceVersion::$SERVICE_VERSION"
-          echo "::set-output name=commitId::$COMMIT_ID"
+          echo "::set-output name=appGroupId::$APP_GROUP_ID"
+          echo "::set-output name=appArtifactId::$APP_ARTIFACT_ID"
+          echo "::set-output name=appVersion::$APP_VERSION"
+          echo "::set-output name=appCommitId::$APP_COMMIT_ID"
 
-          echo "::debug::serviceName: ${{ steps.service-metadata.outputs.serviceName }}, serviceVersion: ${{ steps.service-metadata.outputs.serviceVersion }}, commitId: ${{ steps.service-metadata.outputs.commitId }}"
+          echo "::debug::appGroupId: $APP_GROUP_ID, appArtifactId: $APP_ARTIFACT_ID, appVersion: $APP_VERSION, appCommitId: $APP_COMMIT_ID}"
 
       - name: Build with Maven
         run: mvn package --batch-mode --fail-at-end
@@ -84,8 +91,8 @@ jobs:
       - name: Package Helm chart
         run: |
           helm package \
-          --app-version ${{ steps.service-metadata.outputs.serviceVersion }} \
-          --version ${{ steps.service-metadata.outputs.serviceVersion }} \
+          --app-version ${{ steps.service-metadata.outputs.appVersion }} \
+          --version ${{ steps.service-metadata.outputs.appVersion }} \
           helm
 
       - name: Login to registry (push)
@@ -97,32 +104,8 @@ jobs:
 
       - name: Push to registry
         run: |
-          helm push ${{ steps.service-metadata.outputs.serviceName }}-${{ steps.service-metadata.outputs.serviceVersion }}.tgz \
+          helm push ${{ steps.service-metadata.outputs.appArtifactId }}-${{ steps.service-metadata.outputs.appVersion }}.tgz \
           oci://${{ needs.common.outputs.containerRegistryHost }}/${{ env.IMAGE_REPOSITORY }}
-
-      ################
-
-      # - name: Checkout common environment values
-      #   uses: actions/checkout@v2
-      #   with:
-      #     repository: edgeclusters/academy-common
-      #     path: common
-      #     token: ${{ secrets.COMMON_REPO_ACCESS_TOKEN }}
-
-      # - name: Merge common environment values
-      #   run: cat common/config.env >> $GITHUB_ENV
-
-      # - name: Playing with workflow commands
-      #   id: app-jar-file-name
-      #   run: |
-      #     echo "::debug::Setting JAR_FILE output"
-      #     echo "::set-output name=JAR_FILE::app.jar"
-      #     echo "::warning::Remove this step in the future!"
-
-      # - name: Download application JAR
-      #   uses: actions/download-artifact@v3
-      #   with:
-      #     name: app-jar
 
       - name: Checkout common environment repository
         uses: actions/checkout@v2
@@ -141,58 +124,42 @@ jobs:
           mvn deploy:deploy-file \
           -Durl=${{ needs.common.outputs.nexusSnapshotsRepoUrl }} \
           -DrepositoryId=nexus-snapshots \
-          -Dfile=target/${{ steps.service-metadata.outputs.serviceName }}-${{ steps.service-metadata.outputs.serviceVersion }}.jar \
+          -Dfile=target/${{ steps.service-metadata.outputs.appArtifactId }}-${{ steps.service-metadata.outputs.appVersion }}.jar \
           -DgeneratePom=false \
           -DpomFile=pom.xml \
           --settings common/maven/settings.xml
 
-  # docker-image:
-  #   needs: maven-build
-  #   name: Build and push multiplatform container image
-  #   runs-on: ubuntu-latest
-    
-  #   steps:
+  docker-image:
+    needs: maven-build
+    name: Build and push multiplatform container image
+    runs-on: ubuntu-latest
 
-  #     - name: Download application JAR form Nexus
-  #       run: |
+    steps:
+      - uses: actions/checkout@v2
 
+      - name: Download application JAR form Nexus
+        run: |
+          curl -sSL -X GET \
+          -u ${{ needs.maven-build.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }}\
+          -G "${{ needs.common.outputs.nexusBaseUrl }}/service/rest/v1/search/assets" \
+          -d repository=maven-snapshots \
+          -d maven.groupId=${{ needs.maven-build.outputs.appGroupId }} \
+          -d maven.artifactId=${{ needs.maven-build.outputs.appArtifactId }} \
+          -d maven.baseVersion=${{ needs.maven-build.outputs.appVersion }} \
+          -d maven.extension=jar \
+          | grep -Po '"downloadUrl" : "\K.+(?=",)' \
+          | xargs curl -fsSL -o app.jar
+          # -d maven.classifier=jar-with-dependencies \
 
+      # - name: Prepare helper variables
+      #   id: image
+      #   run: |
+      #     export IMAGE_FQN=$(echo ${{ needs.common.CONTAINER_REGISTRY_HOSTNAME }}/${{ env.IMAGE_REPOSITORY }}/$SERVICE_NAME)
+      #     echo "::set-output name=imageFqn::$APP_GROUP_ID"
 
-  #   #   - name: Checkout common environment values
-  #   #     uses: actions/checkout@v2
-  #   #     with:
-  #   #       repository: edgeclusters/academy-common
-  #   #       path: common
-  #   #       token: ${{ secrets.COMMON_REPO_ACCESS_TOKEN }}
-
-  #   #   - name: Merge common environment values
-  #   #     run: cat common/config.env >> $GITHUB_ENV
-
-  #     # - name: Download application JAR
-  #     #   uses: actions/download-artifact@v3
-  #     #   with:
-  #     #     name: app-jar
-  #     #     path: target
-
-  #     - name: Download Dockerfile
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: dockerfile
-
-  #     - name: Download pom.xml
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: pom
-
-  #     - name: Prepare helper variables
-  #       run: |
-  #         export SERVICE_NAME=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
-  #         echo "SERVICE_NAME=$SERVICE_NAME" >> $GITHUB_ENV
-  #         export SERVICE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-  #         echo "SERVICE_VERSION=$SERVICE_VERSION" >> $GITHUB_ENV
-  #         echo "IMAGE_FQN=$(echo ${{ env.CONTAINER_REGISTRY_HOSTNAME }}/${{ env.IMAGE_REPOSITORY }}/$SERVICE_NAME)" >> $GITHUB_ENV
-  #         export PLATFORMS_TEMP=${{ env.TARGET_PLATFORMS }}
-  #         echo "PLATFORMS=$(echo ${PLATFORMS_TEMP//linux\//})" >> $GITHUB_ENV
+      #     echo "IMAGE_FQN=$(echo ${{ env.CONTAINER_REGISTRY_HOSTNAME }}/${{ env.IMAGE_REPOSITORY }}/$SERVICE_NAME)" >> $GITHUB_ENV
+      #     export PLATFORMS_TEMP=${{ env.TARGET_PLATFORMS }}
+      #     echo "PLATFORMS=$(echo ${PLATFORMS_TEMP//linux\//})" >> $GITHUB_ENV
 
   #     - name: Set up QEMU
   #       uses: docker/setup-qemu-action@v1

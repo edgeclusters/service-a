@@ -42,6 +42,7 @@ jobs:
       - name: Build with Maven
         run: |
           mvn package --batch-mode --fail-at-end
+          mv target/${{ env.SERVICE_NAME }}-${{ env.SERVICE_VERSION }}.jar target/app.jar
 
       - name: Package Helm chart
         run: |
@@ -54,15 +55,15 @@ jobs:
       - name: Upload Helm chart
         uses: actions/upload-artifact@v3
         with:
-          name: chart.tgz
+          name: app-chart
           path: chart.tgz
           retention-days: 1
 
       - name: Upload application JAR
         uses: actions/upload-artifact@v3
         with:
-          name: app.jar
-          path: target/${{ env.SERVICE_NAME }}-${{ env.SERVICE_VERSION }}.jar
+          name: app-jar
+          path: target/app.jar
           retention-days: 1
 
       - name: Publish Test Report
@@ -88,7 +89,7 @@ jobs:
       - name: Download Helm chart archive
         uses: actions/download-artifact@v3
         with:
-          name: chart.tgz
+          name: app-chart
 
       - name: Login to registry (push)
         uses: docker/login-action@v1
@@ -99,33 +100,6 @@ jobs:
 
       - name: Push to registry
         run: helm push chart.tgz oci://${{ env.HELM_REGISTRY_HOSTNAME }}/${{ env.IMAGE_REPOSITORY }}
-
-      # - name: Add helm repository
-      #   run: |
-      #     helm version
-      #     helm repo add \
-      #     --username=${{ env.HELM_REGISTRY_USER_PUSH }} \
-      #     --password=${{ secrets.HELM_REGISTRY_PASSWORD }} \
-      #     ${{ env.HELM_REPO_NAME }} \
-      #     ${{ env.HELM_REGISTRY_BASE_URL }}/${{ env.HELM_REPO_NAME }}
-
-      # # - name: Login to registry (push)
-      # #   uses: docker/login-action@v1
-      # #   with:
-      # #     registry: ${{ env.CONTAINER_REGISTRY_HOSTNAME }}
-      # #     username: ${{ env.HELM_REGISTRY_USER_PUSH }}
-      # #     password: ${{ secrets.HELM_REGISTRY_PASSWORD }}
-
-      # - name: Publish Helm chart
-      #   run: |
-      #     export HELM_EXPERIMENTAL_OCI=1
-      #     helm version
-      #     cd app/helm
-      #     helm dependency update
-      #     helm package --version ${{ env.SERVICE_VERSION }} --app-version ${{ env.SERVICE_VERSION }} .
-      #     helm plugin install https://github.com/chartmuseum/helm-push.git
-      #     helm cm-push ${{ env.SERVICE_NAME }}-${{ env.SERVICE_VERSION }}.tgz ${{ env.HELM_REPO_NAME }}
-      #     # helm push ${{ env.SERVICE_NAME }}-${{ env.SERVICE_VERSION }}.tgz oci://${{ env.HELM_REGISTRY_HOSTNAME }}/chartrepo/${{ env.HELM_REPO_NAME }}
 
   nexus-upload:
     needs: maven-build
@@ -147,13 +121,13 @@ jobs:
         id: app-jar-file-name
         run: |
           echo "::debug::Setting JAR_FILE output"
-          echo "::set-output name=JAR_FILE::app.jar"
+          echo "::set-output name=JAR_FILE::app-jar"
           echo "::warning::Remove this step in the future!"
 
       - name: Download application JAR
         uses: actions/download-artifact@v3
         with:
-          name: ${{ steps.app-jar-file-name.outputs.JAR_FILE }}
+          name: app-jar
 
       - name: Prepare maven settings-security.xml
         run: echo "${{ env.MAVEN_SETTINGS_SECURITY }}" > ~/.m2/settings-security.xml
@@ -164,9 +138,10 @@ jobs:
           -Durl=${{ env.NEXUS_SNAPSHOTS_REPO_URL }} \
           -DrepositoryId=nexus-snapshots \
           -Dfile=${{ steps.app-jar-file-name.outputs.JAR_FILE }} \
-          -DgeneratePom=false \
-          -DpomFile=app/pom.xml \
+          -DgeneratePom=true \
           --settings common/maven/settings.xml
+
+          #          -DpomFile=app/pom.xml \
 
   docker-image:
     needs: maven-build

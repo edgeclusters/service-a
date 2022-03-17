@@ -123,7 +123,7 @@ jobs:
       - name: Checkout common environment values
         uses: actions/checkout@v2
         with:
-q          repository: edgeclusters/academy-common
+          repository: edgeclusters/academy-common
           path: common
           token: ${{ secrets.COMMON_REPO_ACCESS_TOKEN }}
 

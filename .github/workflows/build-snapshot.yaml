@@ -193,6 +193,9 @@ jobs:
 
       - name: Prepare helper variables
         run: |
+          tree
+
+
           export SERVICE_NAME=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
           echo "SERVICE_NAME=$SERVICE_NAME" >> $GITHUB_ENV
 

@@ -9,7 +9,6 @@ on:
 env:
   MAVEN_SETTINGS_SECURITY: "<settingsSecurity><master>${{ secrets.MAVEN_MASTER_PASSWORD }}</master></settingsSecurity>"
   IMAGE_REPOSITORY: academy
-  # HELM_REPO_NAME: academy
   TARGET_PLATFORMS: "linux/amd64,linux/arm64"
   CONTAINER_REGISTRY_ACADEMY_USER: robot-academy-pull-push
 
@@ -30,8 +29,6 @@ jobs:
 
       - name: Get application metadata from pom.xml
         run: |
-          # export SERVICE_NAME=$(mvn --quiet -Dexec.executable=echo -Dexec.args='${project.artifactId}' --non-recursive exec:exec)
-          # export SERVICE_VERSION=$(mvn --quiet -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
           export SERVICE_NAME=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
           export SERVICE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           export COMMIT_ID_SHORT=$(git rev-parse --short "$GITHUB_SHA")
@@ -52,12 +49,13 @@ jobs:
           --app-version ${{ env.SERVICE_VERSION }} \
           --version ${{ env.SERVICE_VERSION }} \
           helm
+          mv ${{ env.SERVICE_NAME }}-${{ env.SERVICE_VERSION }}.tgz chart.tgz
 
       - name: Upload Helm chart
         uses: actions/upload-artifact@v3
         with:
           name: chart.tgz
-          path: ${{ env.SERVICE_NAME }}-${{ env.SERVICE_VERSION }}.tgz
+          path: chart.tgz
           retention-days: 1
 
       - name: Upload application JAR

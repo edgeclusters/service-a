@@ -195,7 +195,6 @@ jobs:
         run: |
           tree
 
-
           export SERVICE_NAME=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
           echo "SERVICE_NAME=$SERVICE_NAME" >> $GITHUB_ENV
 
@@ -243,7 +242,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
-          # context: .
+          context: .
           build-args: BUILD_ALL_CLIS=false
           platforms: ${{ env.TARGET_PLATFORMS }}
           push: true

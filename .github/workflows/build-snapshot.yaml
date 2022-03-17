@@ -121,7 +121,7 @@ jobs:
         id: app-jar-file-name
         run: |
           echo "::debug::Setting JAR_FILE output"
-          echo "::set-output name=JAR_FILE::app-jar"
+          echo "::set-output name=JAR_FILE::app.jar"
           echo "::warning::Remove this step in the future!"
 
       - name: Download application JAR

@@ -199,7 +199,7 @@ q          repository: edgeclusters/academy-common
           export SERVICE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "SERVICE_VERSION=$SERVICE_VERSION" >> $GITHUB_ENV
 
-          echo "IMAGE_FQN=$(echo ${{ env.CONTAINER_REGISTRY_HOSTNAME }}/${{ env.IMAGE_REPOSITORY }}/${{ $SERVICE_NAME }})" >> $GITHUB_ENV
+          echo "IMAGE_FQN=$(echo ${{ env.CONTAINER_REGISTRY_HOSTNAME }}/${{ env.IMAGE_REPOSITORY }}/$SERVICE_NAME)" >> $GITHUB_ENV
 
           export PLATFORMS_TEMP=${{ env.TARGET_PLATFORMS }}
           echo "PLATFORMS=$(echo ${PLATFORMS_TEMP//linux\//})" >> $GITHUB_ENV

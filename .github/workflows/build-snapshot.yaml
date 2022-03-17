@@ -130,7 +130,9 @@ jobs:
           name: app-jar
 
       - name: Prepare maven settings-security.xml
-        run: echo "${{ env.MAVEN_SETTINGS_SECURITY }}" > ~/.m2/settings-security.xml
+        run: |
+          mkdir -p ~/.m2
+          echo "${{ env.MAVEN_SETTINGS_SECURITY }}" > ~/.m2/settings-security.xml
 
       - name: Upload to Nexus
         run: |

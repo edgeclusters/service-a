@@ -18,13 +18,13 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      containerRegistryHost: ${{ steps.common.outputs.containerRegistryHost }}
-      helmRegistryHost: ${{ steps.common.outputs.helmRegistryHost }}
-      helmRegistryPushUser: ${{ steps.common.outputs.helmRegistryPushUser }}
-      nexusBaseUrl: ${{ steps.common.outputs.nexusBaseUrl }}
-      nexusUser: ${{ steps.common.outputs.nexusUser }}
-      nexusSnapshotsRepoUrl: ${{ steps.common.outputs.nexusSnapshotsRepoUrl }}
-      nexusReleasesRepoUrl: ${{ steps.common.outputs.nexusReleasesRepoUrl }}
+      containerRegistryHost: ${{ steps.common-data.outputs.containerRegistryHost }}
+      helmRegistryHost: ${{ steps.common-data.outputs.helmRegistryHost }}
+      helmRegistryPushUser: ${{ steps.common-data.outputs.helmRegistryPushUser }}
+      nexusBaseUrl: ${{ steps.common-data.outputs.nexusBaseUrl }}
+      nexusUser: ${{ steps.common-data.outputs.nexusUser }}
+      nexusSnapshotsRepoUrl: ${{ steps.common-data.outputs.nexusSnapshotsRepoUrl }}
+      nexusReleasesRepoUrl: ${{ steps.common-data.outputs.nexusReleasesRepoUrl }}
 
     steps:
       - name: Checkout common environment values
@@ -34,7 +34,7 @@ jobs:
           token: ${{ secrets.COMMON_REPO_ACCESS_TOKEN }}
 
       - name: Register outputs
-        id: common
+        id: common-data
         run: |
           source config.env
           echo "::set-output name=containerRegistryHost::$CONTAINER_REGISTRY_HOSTNAME"
@@ -98,14 +98,14 @@ jobs:
       - name: Login to registry (push)
         uses: docker/login-action@v1
         with:
-          registry: ${{ needs.common.outputs.containerRegistryHost }}
-          username: ${{ needs.common.outputs.helmRegistryPushUser }}
+          registry: ${{ needs.common-data.outputs.containerRegistryHost }}
+          username: ${{ needs.common-data.outputs.helmRegistryPushUser }}
           password: ${{ secrets.HELM_REGISTRY_PASSWORD }}
 
       - name: Push to registry
         run: |
           helm push ${{ steps.service-metadata.outputs.appArtifactId }}-${{ steps.service-metadata.outputs.appVersion }}.tgz \
-          oci://${{ needs.common.outputs.containerRegistryHost }}/${{ env.IMAGE_REPOSITORY }}
+          oci://${{ needs.common-data.outputs.containerRegistryHost }}/${{ env.IMAGE_REPOSITORY }}
 
       - name: Checkout common environment repository
         uses: actions/checkout@v2
@@ -122,7 +122,7 @@ jobs:
       - name: Upload to Nexus
         run: |
           mvn deploy:deploy-file \
-          -Durl=${{ needs.common.outputs.nexusSnapshotsRepoUrl }} \
+          -Durl=${{ needs.common-data.outputs.nexusSnapshotsRepoUrl }} \
           -DrepositoryId=nexus-snapshots \
           -Dfile=target/${{ steps.service-metadata.outputs.appArtifactId }}-${{ steps.service-metadata.outputs.appVersion }}.jar \
           -DgeneratePom=false \
@@ -140,8 +140,8 @@ jobs:
       - name: Download application JAR form Nexus
         run: |
           curl -sSL -X GET \
-          -u ${{ needs.common.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }}\
-          -G "${{ needs.common.outputs.nexusBaseUrl }}/service/rest/v1/search/assets" \
+          -u ${{ needs.common-data.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }} \
+          -G "${{ needs.common-data.outputs.nexusBaseUrl }}/service/rest/v1/search/assets" \
           -d repository=maven-snapshots \
           -d maven.groupId=${{ needs.maven-build.outputs.appGroupId }} \
           -d maven.artifactId=${{ needs.maven-build.outputs.appArtifactId }} \

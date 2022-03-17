@@ -136,14 +136,15 @@ jobs:
 
       - name: Upload to Nexus
         run: |
+          unzip ${{ steps.app-jar-file-name.outputs.JAR_FILE }}
+          export POM_LOCATION=$(find META-INF/maven -name pom.xml)
           mvn deploy:deploy-file \
           -Durl=${{ env.NEXUS_SNAPSHOTS_REPO_URL }} \
           -DrepositoryId=nexus-snapshots \
           -Dfile=${{ steps.app-jar-file-name.outputs.JAR_FILE }} \
-          -DgeneratePom=true \
+          -DgeneratePom=false \
+          -DpomFile=$POM_LOCATION \
           --settings common/maven/settings.xml
-
-          #          -DpomFile=app/pom.xml \
 
   docker-image:
     needs: maven-build

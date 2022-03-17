@@ -29,7 +29,7 @@ RUN addgroup --gid ${APP_USER_GID} ${APP_USER} \
 
 USER ${APP_USER}
 
-COPY ${JAR_FILE} /
-COPY --from=builder /opentelemetry-javaagent.jar /
+COPY ${JAR_FILE} /app.jar
+COPY --from=builder /opentelemetry-javaagent.jar /opentelemetry-javaagent.jar
 
 ENTRYPOINT ["java", "-javaagent:/opentelemetry-javaagent.jar", "-jar", "/app.jar"]

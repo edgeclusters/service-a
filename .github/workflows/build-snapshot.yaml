@@ -154,26 +154,12 @@ jobs:
           -d maven.baseVersion=${{ needs.maven-build.outputs.appVersion }} \
           --output app.jar
 
-      # containerRegistryHost: ${{ steps.common-data.outputs.containerRegistryHost }}
-      # helmRegistryHost: ${{ steps.common-data.outputs.helmRegistryHost }}
-      # helmRegistryPushUser: ${{ steps.common-data.outputs.helmRegistryPushUser }}
-      # nexusBaseUrl: ${{ steps.common-data.outputs.nexusBaseUrl }}
-      # nexusUser: ${{ steps.common-data.outputs.nexusUser }}
-      # nexusSnapshotsRepoUrl: ${{ steps.common-data.outputs.nexusSnapshotsRepoUrl }}
-      # nexusReleasesRepoUrl: ${{ steps.common-data.outputs.nexusReleasesRepoUrl }}
-      # targetPlatforms: ${{ steps.common-data.outputs.targetPlatforms }}
-
-      # appGroupId: ${{ steps.service-metadata.outputs.appGroupId }}
-      # appArtifactId: ${{ steps.service-metadata.outputs.appArtifactId }}
-      # appVersion: ${{ steps.service-metadata.outputs.appVersion }}
-      # appCommitId: ${{ steps.service-metadata.outputs.appCommitId }}
-
       - name: Prepare helper variables
         id: image
         run: |
           export IMAGE_FQN=$(echo ${{ needs.common.outputs.containerRegistryHost }}/${{ env.IMAGE_REPOSITORY }}/${{ needs.maven-build.outputs.appArtifactId }})
           echo "::set-output name=imageFqn::$IMAGE_FQN"
-          export PLATFORMS_TEMP=${{ steps.common-data.outputs.targetPlatforms }}
+          export PLATFORMS_TEMP=${{ needs.common.outputs.targetPlatforms }}
           echo "::set-output name=targetArchitectures::$(echo ${PLATFORMS_TEMP//linux\//})"
 
       - name: Set up QEMU
@@ -212,16 +198,10 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          build-args: BUILD_ALL_CLIS=false
+          build-args: BUILD_ALL_CLIS=false,JAR_FILE=app.jar
           platforms: ${{ needs.common.outputs.targetPlatforms }}
           push: true
           tags: |
             "${{ steps.image.outputs.imageFqn }}:${{ needs.maven-build.outputs.appVersion }}"
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ steps.image.outputs.imageFqn }}:latest
-
-
-      # appGroupId: ${{ steps.service-metadata.outputs.appGroupId }}
-      # appArtifactId: ${{ steps.service-metadata.outputs.appArtifactId }}
-      # appVersion: ${{ steps.service-metadata.outputs.appVersion }}
-      # appCommitId: ${{ steps.service-metadata.outputs.appCommitId }}

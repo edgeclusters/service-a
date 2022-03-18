@@ -171,9 +171,9 @@ jobs:
       - name: Prepare helper variables
         id: image
         run: |
-          IMAGE_FQN=$(echo ${{ needs.common.outputs.containerRegistryHost }}/${{ env.IMAGE_REPOSITORY }}/${{ needs.maven-build.outputs.appArtifactId }}) \
+          export IMAGE_FQN=$(echo ${{ needs.common.outputs.containerRegistryHost }}/${{ env.IMAGE_REPOSITORY }}/${{ needs.maven-build.outputs.appArtifactId }})
           echo "::set-output name=imageFqn::$IMAGE_FQN"
-          PLATFORMS_TEMP=${{ steps.common-data.outputs.targetPlatforms }} \
+          export PLATFORMS_TEMP=${{ steps.common-data.outputs.targetPlatforms }}
           echo "::set-output name=targetArchitectures::$(echo ${PLATFORMS_TEMP//linux\//})"
 
       - name: Set up QEMU

@@ -45,10 +45,6 @@ jobs:
           echo "::set-output name=nexusSnapshotsRepoUrl::$NEXUS_SNAPSHOTS_REPO_URL"
           echo "::set-output name=nexusReleasesRepoUrl::$NEXUS_RELEASES_REPO_URL"
 
-      - run: |
-          echo ${{ steps.common-data.outputs.helmRegistryHost }}
-          echo ${{ steps.common-data.outputs.nexusUser }}
-
   maven-build:
     name: Maven build
     needs: common
@@ -62,14 +58,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-
-
-
-      - run: |
-          echo ${{ needs.common.outputs.helmRegistryHost }}
-          echo ${{ needs.common.outputs.nexusUser }}
-
-
       - name: Set up JDK 17
         uses: actions/setup-java@v2
         with:
@@ -151,7 +139,7 @@ jobs:
       - name: Download application JAR form Nexus
         run: |
           curl -sSL -X GET \
-          -u ${{ needs.common.outputs.nexusUser }}----${{ secrets.NEXUS_PASSWORD }} \
+          -u ${{ needs.common.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }} \
           -G "${{ needs.common.outputs.nexusBaseUrl }}/service/rest/v1/search/assets" \
           -d repository=maven-snapshots \
           -d maven.groupId=${{ needs.maven-build.outputs.appGroupId }} \

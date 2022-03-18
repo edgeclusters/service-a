@@ -129,7 +129,7 @@ jobs:
           --settings common/maven/settings.xml
 
   docker-image:
-    needs: maven-build
+    needs: [common, maven-build]
     name: Build and push multiplatform container image
     runs-on: ubuntu-latest
 

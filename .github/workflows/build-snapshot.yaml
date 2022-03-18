@@ -143,7 +143,7 @@ jobs:
         run: |
           curl -L -X GET \
           -u ${{ needs.common.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }} \
-          -G "${{ needs.common.outputs.nexusBaseUrl }}/service/rest/v1/search/assets/download \
+          -G "${{ needs.common.outputs.nexusBaseUrl }}/service/rest/v1/search/assets/download" \
           -d sort=version \
           -d direction=desc \
           -d maven.extension=jar \

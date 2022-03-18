@@ -139,7 +139,6 @@ jobs:
       - name: Download application JAR form Nexus
         run: |
           curl -sSL -X GET \
-          -u ${{ needs.common.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }} \
           -G "${{ needs.common.outputs.nexusBaseUrl }}/service/rest/v1/search/assets" \
           -d repository=maven-snapshots \
           -d maven.groupId=${{ needs.maven-build.outputs.appGroupId }} \
@@ -147,7 +146,7 @@ jobs:
           -d maven.baseVersion=${{ needs.maven-build.outputs.appVersion }} \
           -d maven.extension=jar \
           | grep -Po '"downloadUrl" : "\K.+(?=",)' \
-          | xargs curl -fsSL -o app.jar
+          | xargs curl -u ${{ needs.common.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }} -fsSL -o app.jar
           # -d maven.classifier=jar-with-dependencies \
 
       # - name: Prepare helper variables

@@ -146,9 +146,10 @@ jobs:
           -d maven.artifactId=${{ needs.maven-build.outputs.appArtifactId }} \
           -d maven.baseVersion=${{ needs.maven-build.outputs.appVersion }} \
           -d maven.extension=jar \
+          -d maven.classifier=jar-with-dependencies \
           | grep -Po '"downloadUrl" : "\K.+(?=",)' \
           | xargs curl -u ${{ needs.common.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }} -fsSL -o app.jar
-          # -d maven.classifier=jar-with-dependencies \
+          
 
       # - name: Prepare helper variables
       #   id: image

@@ -142,6 +142,7 @@ jobs:
       # SNAPSHOT!!!!
       - name: Download application JAR form Nexus
         run: |
+          mkdir -p target
           curl -L -X GET \
           -u ${{ needs.common.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }} \
           -G "${{ needs.common.outputs.nexusBaseUrl }}/service/rest/v1/search/assets/download" \
@@ -153,7 +154,7 @@ jobs:
           -d maven.groupId=${{ needs.maven-build.outputs.appGroupId }} \
           -d maven.artifactId=${{ needs.maven-build.outputs.appArtifactId }} \
           -d maven.baseVersion=${{ needs.maven-build.outputs.appVersion }} \
-          --output app.jar
+          --output target/app.jar
 
       - name: Prepare helper variables
         id: image
@@ -201,7 +202,7 @@ jobs:
           context: .
           build-args: |
             BUILD_ALL_CLIS=false
-            JAR_FILE=app.jar
+            JAR_FILE=target/app.jar
           platforms: ${{ needs.common.outputs.targetPlatforms }}
           push: true
           tags: |

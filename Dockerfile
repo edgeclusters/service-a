@@ -20,6 +20,7 @@ ARG JAR_FILE=target/*.jar
 
 RUN addgroup --gid ${APP_USER_GID} ${APP_USER} \
     && adduser \
+    --gecos "First Last,RoomNumber,WorkPhone,HomePhone" \
     --quiet \
     --disabled-password \
     --no-create-home \

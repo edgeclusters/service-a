@@ -3,14 +3,13 @@ name: build snapshot
 on:
   push:
     branches:
-      - "feature/**"
+      - feature/**
       - main
   workflow_dispatch:
 
 env:
   MAVEN_SETTINGS_SECURITY: "<settingsSecurity><master>${{ secrets.MAVEN_MASTER_PASSWORD }}</master></settingsSecurity>"
   IMAGE_REPOSITORY: academy
-  CONTAINER_REGISTRY_ACADEMY_USER: robot-academy-pull-push
 
 jobs:
   common:
@@ -26,6 +25,7 @@ jobs:
       nexusSnapshotsRepoUrl: ${{ steps.common-data.outputs.nexusSnapshotsRepoUrl }}
       nexusReleasesRepoUrl: ${{ steps.common-data.outputs.nexusReleasesRepoUrl }}
       targetPlatforms: ${{ steps.common-data.outputs.targetPlatforms }}
+      containerRegistryUser: ${{ steps.common-data.outputs.containerRegistryUser }}
 
     steps:
       - name: Checkout common environment values
@@ -46,6 +46,7 @@ jobs:
           echo "::set-output name=nexusSnapshotsRepoUrl::$NEXUS_SNAPSHOTS_REPO_URL"
           echo "::set-output name=nexusReleasesRepoUrl::$NEXUS_RELEASES_REPO_URL"
           echo "::set-output name=targetPlatforms::$TARGET_PLATFORMS"
+          echo "::set-output name=containerRegistryUser::$CONTAINER_REGISTRY_USER_PUSH"
 
   maven-build:
     name: Maven build
@@ -175,9 +176,8 @@ jobs:
         uses: docker/login-action@v1
         with:
           registry: ${{ needs.common.outputs.containerRegistryHost }}
-          username: ${{ needs.common.outputs.helmRegistryPushUser }}
-          password: ${{ secrets.HELM_REGISTRY_PASSWORD }}
-
+          username: ${{ needs.common.outputs.containerRegistryUser }}
+          password: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
 
         #COMMIT!!!!
       - name: Docker meta

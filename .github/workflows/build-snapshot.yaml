@@ -46,6 +46,7 @@ jobs:
           echo "::set-output name=nexusReleasesRepoUrl::$NEXUS_RELEASES_REPO_URL"
 
       - run: |
+          echo ${{ steps.common-data.outputs.helmRegistryHost }}
           echo ${{ steps.common-data.outputs.nexusUser }}
 
   maven-build:
@@ -65,6 +66,7 @@ jobs:
 
 
       - run: |
+          echo ${{ needs.common.outputs.helmRegistryHost }}
           echo ${{ needs.common.outputs.nexusUser }}
 
 

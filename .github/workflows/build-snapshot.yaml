@@ -179,7 +179,6 @@ jobs:
           username: ${{ needs.common.outputs.containerRegistryUser }}
           password: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
 
-        #COMMIT!!!!
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v3

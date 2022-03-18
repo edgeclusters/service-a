@@ -46,7 +46,7 @@ jobs:
           echo "::set-output name=nexusReleasesRepoUrl::$NEXUS_RELEASES_REPO_URL"
 
       - run: |
-        echo 'XXX: ${{ steps.common-data.outputs.nexusUser }}'
+          echo ${{ steps.common-data.outputs.nexusUser }}
 
   maven-build:
     name: Maven build
@@ -65,7 +65,7 @@ jobs:
 
 
       - run: |
-        echo 'XXX: ${{ needs.common.outputs.nexusUser }}'
+          echo ${{ needs.common.outputs.nexusUser }}
 
 
       - name: Set up JDK 17

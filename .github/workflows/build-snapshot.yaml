@@ -144,7 +144,7 @@ jobs:
           -d repository=maven-snapshots \
           -d maven.groupId=${{ needs.maven-build.outputs.appGroupId }} \
           -d maven.artifactId=${{ needs.maven-build.outputs.appArtifactId }} \
-          -d maven.baseVersion=${{ needs.maven-build.outputs.appVersion }} \
+          -d maven.version=${{ needs.maven-build.outputs.appVersion }} \
           -d maven.extension=jar \
           -d maven.classifier=jar-with-dependencies \
           | grep -Po '"downloadUrl" : "\K.+(?=",)' \

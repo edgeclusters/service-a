@@ -145,7 +145,6 @@ jobs:
           -d maven.groupId=${{ needs.maven-build.outputs.appGroupId }} \
           -d maven.artifactId=${{ needs.maven-build.outputs.appArtifactId }} \
           -d maven.version=${{ needs.maven-build.outputs.appVersion }} \
-          -d maven.extension=jar \
           -d maven.classifier=jar-with-dependencies \
           | grep -Po '"downloadUrl" : "\K.+(?=",)' \
           | xargs curl -u ${{ needs.common.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }} -fsSL -o app.jar

@@ -25,6 +25,7 @@ jobs:
       nexusUser: ${{ steps.common-data.outputs.nexusUser }}
       nexusSnapshotsRepoUrl: ${{ steps.common-data.outputs.nexusSnapshotsRepoUrl }}
       nexusReleasesRepoUrl: ${{ steps.common-data.outputs.nexusReleasesRepoUrl }}
+      targetPlatforms: ${{ steps.common-data.outputs.targetPlatforms }}
 
     steps:
       - name: Checkout common environment values
@@ -44,6 +45,7 @@ jobs:
           echo "::set-output name=nexusUser::$NEXUS_USER"
           echo "::set-output name=nexusSnapshotsRepoUrl::$NEXUS_SNAPSHOTS_REPO_URL"
           echo "::set-output name=nexusReleasesRepoUrl::$NEXUS_RELEASES_REPO_URL"
+          echo "::set-output name=targetPlatforms::$TARGET_PLATFORMS"
 
   maven-build:
     name: Maven build
@@ -136,70 +138,90 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      # SNAPSHOT!!!!
       - name: Download application JAR form Nexus
         run: |
-          curl -sSL -X GET \
+          curl -L -X GET \
           -u ${{ needs.common.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }} \
-          -G "${{ needs.common.outputs.nexusBaseUrl }}/service/rest/v1/search/assets" \
+          -G "${{ needs.common.outputs.nexusBaseUrl }}/service/rest/v1/search/assets/download \
+          -d sort=version \
+          -d direction=desc \
+          -d maven.extension=jar \
+          -d maven.classifier= \
           -d repository=maven-snapshots \
           -d maven.groupId=${{ needs.maven-build.outputs.appGroupId }} \
           -d maven.artifactId=${{ needs.maven-build.outputs.appArtifactId }} \
-          -d maven.version=${{ needs.maven-build.outputs.appVersion }} \
-          -d maven.extension=jar \
-          | grep -Po '"downloadUrl" : "\K.+(?=",)' \
-          | xargs curl -u ${{ needs.common.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }} -fsSL -o app.jar
-          
+          -d maven.baseVersion=${{ needs.maven-build.outputs.appVersion }} \
+          --output app.jar
 
-      # - name: Prepare helper variables
-      #   id: image
-      #   run: |
-      #     export IMAGE_FQN=$(echo ${{ needs.common.CONTAINER_REGISTRY_HOSTNAME }}/${{ env.IMAGE_REPOSITORY }}/$SERVICE_NAME)
-      #     echo "::set-output name=imageFqn::$APP_GROUP_ID"
+      # containerRegistryHost: ${{ steps.common-data.outputs.containerRegistryHost }}
+      # helmRegistryHost: ${{ steps.common-data.outputs.helmRegistryHost }}
+      # helmRegistryPushUser: ${{ steps.common-data.outputs.helmRegistryPushUser }}
+      # nexusBaseUrl: ${{ steps.common-data.outputs.nexusBaseUrl }}
+      # nexusUser: ${{ steps.common-data.outputs.nexusUser }}
+      # nexusSnapshotsRepoUrl: ${{ steps.common-data.outputs.nexusSnapshotsRepoUrl }}
+      # nexusReleasesRepoUrl: ${{ steps.common-data.outputs.nexusReleasesRepoUrl }}
+      # targetPlatforms: ${{ steps.common-data.outputs.targetPlatforms }}
 
-      #     echo "IMAGE_FQN=$(echo ${{ env.CONTAINER_REGISTRY_HOSTNAME }}/${{ env.IMAGE_REPOSITORY }}/$SERVICE_NAME)" >> $GITHUB_ENV
-      #     export PLATFORMS_TEMP=${{ env.TARGET_PLATFORMS }}
-      #     echo "PLATFORMS=$(echo ${PLATFORMS_TEMP//linux\//})" >> $GITHUB_ENV
+      # appGroupId: ${{ steps.service-metadata.outputs.appGroupId }}
+      # appArtifactId: ${{ steps.service-metadata.outputs.appArtifactId }}
+      # appVersion: ${{ steps.service-metadata.outputs.appVersion }}
+      # appCommitId: ${{ steps.service-metadata.outputs.appCommitId }}
 
-  #     - name: Set up QEMU
-  #       uses: docker/setup-qemu-action@v1
-  #       with:
-  #         image: tonistiigi/binfmt:qemu-v6.2.0
-  #         platforms: ${{ env.PLATFORMS }}
+      - name: Prepare helper variables
+        id: image
+        run: |
+          IMAGE_FQN=$(echo ${{ needs.common.outputs.containerRegistryHost }}/${{ env.IMAGE_REPOSITORY }}/${{ needs.maven-build.outputs.appArtifactId }}) \
+          echo "::set-output name=imageFqn::$IMAGE_FQN"
+          PLATFORMS_TEMP=${{ steps.common-data.outputs.targetPlatforms }} \
+          echo "::set-output name=targetArchitectures::$(echo ${PLATFORMS_TEMP//linux\//})"
 
-  #     - name: Set up Docker Buildx
-  #       uses: docker/setup-buildx-action@v1
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+        with:
+          image: tonistiigi/binfmt:qemu-v6.2.0
+          platforms: ${{ steps.image.outputs.targetArchitectures }}
 
-  #     - name: Login to registry (push)
-  #       uses: docker/login-action@v1
-  #       with:
-  #         registry: ${{ env.CONTAINER_REGISTRY_HOSTNAME }}
-  #         username: ${{ env.CONTAINER_REGISTRY_ACADEMY_USER }}
-  #         password: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
 
-  #     - name: Docker meta
-  #       id: meta
-  #       uses: docker/metadata-action@v3
-  #       with:
-  #         # list of Docker images to use as base name for tags
-  #         images: ${{ env.IMAGE_FQN }}
-  #         # generate Docker tags based on the following events/attributes
-  #         tags: |
-  #           type=schedule
-  #           type=ref,event=branch
-  #           type=ref,event=pr
-  #           type=semver,pattern={{version}}
-  #           type=semver,pattern={{major}}.{{minor}}
-  #           type=semver,pattern={{major}}
-  #           type=sha
+      - name: Login to registry (push)
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ needs.common.outputs.containerRegistryHost }}
+          username: ${{ needs.common.outputs.helmRegistryPushUser }}
+          password: ${{ secrets.HELM_REGISTRY_PASSWORD }}
 
-  #     - name: Build and push
-  #       uses: docker/build-push-action@v2
-  #       with:
-  #         context: .
-  #         build-args: BUILD_ALL_CLIS=false
-  #         platforms: ${{ env.TARGET_PLATFORMS }}
-  #         push: true
-  #         tags: |
-  #           "${{ env.IMAGE_FQN }}:${{ env.SERVICE_VERSION }}"
-  #         labels: ${{ steps.meta.outputs.labels }}
-  #         cache-from: type=registry,ref=${{ env.IMAGE_FQN }}:latest
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{ steps.image.outputs.imageFqn }}
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+
+            #COMMIT!!!!
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          build-args: BUILD_ALL_CLIS=false
+          platforms: ${{ needs.common.outputs.targetPlatforms }}
+          push: true
+          tags: |
+            "${{ steps.image.outputs.imageFqn }}:${{ needs.maven-build.outputs.appVersion }}"
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ steps.image.outputs.imageFqn }}:latest
+
+
+      # appGroupId: ${{ steps.service-metadata.outputs.appGroupId }}
+      # appArtifactId: ${{ steps.service-metadata.outputs.appArtifactId }}
+      # appVersion: ${{ steps.service-metadata.outputs.appVersion }}
+      # appCommitId: ${{ steps.service-metadata.outputs.appCommitId }}

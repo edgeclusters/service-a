@@ -49,6 +49,9 @@ jobs:
     steps:
       - uses: edgeclusters/common-tasks@v1
         id: common
+        with:
+          accessToken: ${{ secrets.COMMON_REPO_ACCESS_TOKEN }}
+
 
       # - name: Checkout common environment values
       #   uses: actions/checkout@v2

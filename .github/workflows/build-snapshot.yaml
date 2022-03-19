@@ -8,6 +8,7 @@ on:
   workflow_dispatch:
 
 env:
+  MAIN_BRANCH: main
   MAVEN_SETTINGS_SECURITY: "<settingsSecurity><master>${{ secrets.MAVEN_MASTER_PASSWORD }}</master></settingsSecurity>"
   IMAGE_REPOSITORY: academy
 
@@ -67,6 +68,15 @@ jobs:
           distribution: "temurin"
           java-version: "17"
           cache: maven
+
+      - name: Extract branch name
+        run: echo "::set-output name=branch::$(echo ${GITHUB_REF#refs/heads/})"
+        id: extract_branch
+
+      - name: Advance version if merged to main branch
+        if: steps.extract_branch.branch == '${{ env.MAIN_BRANCH }}'
+        run: |
+          
 
       - name: Get application metadata from pom.xml
         id: service-metadata

@@ -3,12 +3,13 @@ name: build snapshot
 on:
   push:
     branches:
-      - feature/**
+      - develop
       - main
   workflow_dispatch:
 
 env:
   MAIN_BRANCH: main
+  DEVELOP_BRANCH: develop
   MAVEN_SETTINGS_SECURITY: "<settingsSecurity><master>${{ secrets.MAVEN_MASTER_PASSWORD }}</master></settingsSecurity>"
   IMAGE_REPOSITORY: academy
 
@@ -27,6 +28,7 @@ jobs:
       nexusReleasesRepoUrl: ${{ steps.common-data.outputs.nexusReleasesRepoUrl }}
       targetPlatforms: ${{ steps.common-data.outputs.targetPlatforms }}
       containerRegistryUser: ${{ steps.common-data.outputs.containerRegistryUser }}
+      gitUserEmail: ${{ steps.common-data.outputs.gitUserEmail }}
 
     steps:
       - name: Checkout common environment values
@@ -48,6 +50,7 @@ jobs:
           echo "::set-output name=nexusReleasesRepoUrl::$NEXUS_RELEASES_REPO_URL"
           echo "::set-output name=targetPlatforms::$TARGET_PLATFORMS"
           echo "::set-output name=containerRegistryUser::$CONTAINER_REGISTRY_USER_PUSH"
+          echo "::set-output name=gitUserEmail::$GIT_USER_EMAIL"
 
   maven-build:
     name: Maven build
@@ -62,6 +65,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
       - name: Set up JDK 17
         uses: actions/setup-java@v2
         with:
@@ -72,11 +76,6 @@ jobs:
       - name: Extract branch name
         run: echo "::set-output name=branch::$(echo ${GITHUB_REF#refs/heads/})"
         id: extract_branch
-
-      - name: Advance version if merged to main branch
-        if: steps.extract_branch.branch == '${{ env.MAIN_BRANCH }}'
-        run: |
-          
 
       - name: Get application metadata from pom.xml
         id: service-metadata
@@ -92,6 +91,29 @@ jobs:
           echo "::set-output name=appCommitId::$APP_COMMIT_ID"
 
           echo "::debug::appGroupId: $APP_GROUP_ID, appArtifactId: $APP_ARTIFACT_ID, appVersion: $APP_VERSION, appCommitId: $APP_COMMIT_ID}"
+
+      - name: Configure git
+        if: steps.extract_branch.branch == '${{ env.MAIN_BRANCH }}'
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email '${{ needs.common.outputs.gitUserEmail }}'
+
+      - name: Remove SNAPSHOT, commit, tag and push
+        id: release
+        if: steps.extract_branch.branch == '${{ env.MAIN_BRANCH }}'
+        run: |
+          mvn versions:set -DremoveSnapshot
+          mvn versions:commit
+
+          export APP_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "::set-output name=appVersion::$APP_VERSION"
+
+          git commit -am "Release ($APP_VERSION)"
+          git tag $APP_VERSION
+          git push --all
+
+      - uses: actions/checkout@v2
+        if: steps.extract_branch.branch == '${{ env.MAIN_BRANCH }}'
 
       - name: Build with Maven
         run: mvn package --batch-mode --fail-at-end

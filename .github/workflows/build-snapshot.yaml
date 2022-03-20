@@ -71,6 +71,7 @@ jobs:
         uses: edgeclusters/extract-pom-metadata@v1
         with:
           pomDir: .
+
         # run: |
         #   export APP_GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout)
         #   export APP_ARTIFACT_ID=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)

@@ -23,17 +23,6 @@ jobs:
     name: Common tasks
     runs-on: ubuntu-latest
 
-    # outputs:
-    #   containerRegistryHost: ${{ steps.common-data.outputs.containerRegistryHost }}
-    #   helmRegistryHost: ${{ steps.common-data.outputs.helmRegistryHost }}
-    #   helmRegistryPushUser: ${{ steps.common-data.outputs.helmRegistryPushUser }}
-    #   nexusBaseUrl: ${{ steps.common-data.outputs.nexusBaseUrl }}
-    #   nexusUser: ${{ steps.common-data.outputs.nexusUser }}
-    #   nexusSnapshotsRepoUrl: ${{ steps.common-data.outputs.nexusSnapshotsRepoUrl }}
-    #   nexusReleasesRepoUrl: ${{ steps.common-data.outputs.nexusReleasesRepoUrl }}
-    #   targetPlatforms: ${{ steps.common-data.outputs.targetPlatforms }}
-    #   containerRegistryUser: ${{ steps.common-data.outputs.containerRegistryUser }}
-    #   gitUserEmail: ${{ steps.common-data.outputs.gitUserEmail }}
     outputs:
       containerRegistryHost: ${{ steps.common.outputs.containerRegistryHost }}
       helmRegistryHost: ${{ steps.common.outputs.helmRegistryHost }}
@@ -51,28 +40,6 @@ jobs:
         id: common
         with:
           accessToken: ${{ secrets.COMMON_REPO_ACCESS_TOKEN }}
-
-
-      # - name: Checkout common environment values
-      #   uses: actions/checkout@v2
-      #   with:
-      #     repository: edgeclusters/academy-common
-      #     token: ${{ secrets.COMMON_REPO_ACCESS_TOKEN }}
-
-      # - name: Register outputs
-      #   id: common-data
-      #   run: |
-      #     source config.env
-      #     echo "::set-output name=containerRegistryHost::$CONTAINER_REGISTRY_HOSTNAME"
-      #     echo "::set-output name=helmRegistryHost::$HELM_REGISTRY_HOSTNAME"
-      #     echo "::set-output name=helmRegistryPushUser::$HELM_REGISTRY_USER_PUSH"
-      #     echo "::set-output name=nexusBaseUrl::$NEXUS_BASE_URL"
-      #     echo "::set-output name=nexusUser::$NEXUS_USER"
-      #     echo "::set-output name=nexusSnapshotsRepoUrl::$NEXUS_SNAPSHOTS_REPO_URL"
-      #     echo "::set-output name=nexusReleasesRepoUrl::$NEXUS_RELEASES_REPO_URL"
-      #     echo "::set-output name=targetPlatforms::$TARGET_PLATFORMS"
-      #     echo "::set-output name=containerRegistryUser::$CONTAINER_REGISTRY_USER_PUSH"
-      #     echo "::set-output name=gitUserEmail::$GIT_USER_EMAIL"
 
   maven-build:
     name: Maven build
@@ -101,16 +68,19 @@ jobs:
 
       - name: Get application metadata from pom.xml
         id: service-metadata
-        run: |
-          export APP_GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout)
-          export APP_ARTIFACT_ID=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
-          export APP_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          export APP_COMMIT_ID=$(git rev-parse --short "$GITHUB_SHA")
+        uses: edgeclusters/extract-pom-metadata@v1
+        with:
+          pomDir: .
+        # run: |
+        #   export APP_GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout)
+        #   export APP_ARTIFACT_ID=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
+        #   export APP_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+        #   export APP_COMMIT_ID=$(git rev-parse --short "$GITHUB_SHA")
 
-          echo "::set-output name=appGroupId::$APP_GROUP_ID"
-          echo "::set-output name=appArtifactId::$APP_ARTIFACT_ID"
-          echo "::set-output name=appVersion::$APP_VERSION"
-          echo "::set-output name=appCommitId::$APP_COMMIT_ID"
+        #   echo "::set-output name=appGroupId::$APP_GROUP_ID"
+        #   echo "::set-output name=appArtifactId::$APP_ARTIFACT_ID"
+        #   echo "::set-output name=appVersion::$APP_VERSION"
+        #   echo "::set-output name=appCommitId::$APP_COMMIT_ID"
 
           echo "::debug::appGroupId: $APP_GROUP_ID, appArtifactId: $APP_ARTIFACT_ID, appVersion: $APP_VERSION, appCommitId: $APP_COMMIT_ID}"
 

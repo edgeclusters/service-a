@@ -50,7 +50,7 @@ jobs:
       - uses: edgeclusters/common-tasks@v1
         id: common
         with:
-          accessToken: xxx${{ secrets.COMMON_REPO_ACCESS_TOKEN }}
+          accessToken: ${{ secrets.COMMON_REPO_ACCESS_TOKEN }}
 
 
       # - name: Checkout common environment values

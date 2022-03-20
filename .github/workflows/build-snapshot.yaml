@@ -82,8 +82,6 @@ jobs:
         #   echo "::set-output name=appVersion::$APP_VERSION"
         #   echo "::set-output name=appCommitId::$APP_COMMIT_ID"
 
-          echo "::debug::appGroupId: $APP_GROUP_ID, appArtifactId: $APP_ARTIFACT_ID, appVersion: $APP_VERSION, appCommitId: $APP_COMMIT_ID}"
-
       - name: Configure git
         if: steps.extract_branch.branch == '${{ env.MAIN_BRANCH }}'
         run: |

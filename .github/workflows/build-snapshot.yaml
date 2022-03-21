@@ -86,7 +86,7 @@ jobs:
       - name: Configure git
         if: steps.extract_branch.branch == '${{ env.MAIN_BRANCH }}'
         run: |
-          git config --global user.name 'GitHub Actions'
+          git config --global user.name 'actions'
           git config --global user.email '${{ needs.common.outputs.gitUserEmail }}'
 
       - name: Remove SNAPSHOT, commit, tag and push

@@ -99,7 +99,8 @@ jobs:
           export APP_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "::set-output name=appVersion::$APP_VERSION"
 
-          git commit -am "Release ($APP_VERSION)"
+          git add -A
+          git commit -m "Release ($APP_VERSION)"
           git tag $APP_VERSION
           git push --all
 

@@ -82,7 +82,7 @@ jobs:
           export APP_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "::set-output name=appVersion::$APP_VERSION"
 
-          echo "xxx"
+          echo $(date) > xxx
 
           git config --global user.name "actions"
           git config --global user.email "${{ needs.common.outputs.gitUserEmail }}"

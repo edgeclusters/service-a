@@ -1,4 +1,4 @@
-name: build snapshot
+name: build
 
 on:
   push:
@@ -71,17 +71,6 @@ jobs:
         uses: edgeclusters/extract-pom-metadata@v1
         with:
           pomDir: .
-
-        # run: |
-        #   export APP_GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout)
-        #   export APP_ARTIFACT_ID=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
-        #   export APP_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-        #   export APP_COMMIT_ID=$(git rev-parse --short "$GITHUB_SHA")
-
-        #   echo "::set-output name=appGroupId::$APP_GROUP_ID"
-        #   echo "::set-output name=appArtifactId::$APP_ARTIFACT_ID"
-        #   echo "::set-output name=appVersion::$APP_VERSION"
-        #   echo "::set-output name=appCommitId::$APP_COMMIT_ID"
 
       - name: Configure git
         if: steps.extract_branch.branch == '${{ env.MAIN_BRANCH }}'

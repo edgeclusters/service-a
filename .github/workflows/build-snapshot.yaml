@@ -65,7 +65,7 @@ jobs:
       - name: Extract branch name
         id: extract_branch
         run: |
-          export CURRENT_BRANCH=$(echo ${GITHUB_REF##*/})
+          export CURRENT_BRANCH=$(echo ${GITHUB_REF#refs/heads/})
           echo "::set-output name=currentBranch::$CURRENT_BRANCH"
 
       - name: Get application metadata from pom.xml
@@ -76,16 +76,8 @@ jobs:
 
       - name: Remove SNAPSHOT, commit, tag and push
         id: release
-        if: steps.extract_branch.currentBranch == '${{ env.MAIN_BRANCH }}'
+        if: steps.extract_branch.outputs.currentBranch == '${{ env.MAIN_BRANCH }}'
         run: |
-
-          echo "###########: ${{ steps.extract_branch.currentBranch }}"
-          echo "###########: ${{ steps.extract_branch.outputs.currentBranch }}"
-          echo "GITHUB_REF: ${GITHUB_REF}"
-          echo "\${GITHUB_REF##*/}: ${GITHUB_REF##*/}"
-          echo "github.ref: ${{ github.ref }}"
-          echo "github.head_ref: ${{ github.head_ref }}"
-
           mvn versions:set -DremoveSnapshot
           mvn versions:commit
 
@@ -100,7 +92,7 @@ jobs:
           git push --all
 
       - uses: actions/checkout@v2
-        if: steps.extract_branch.currentBranch == '${{ env.MAIN_BRANCH }}'
+        if: steps.extract_branch.outputs.currentBranch == '${{ env.MAIN_BRANCH }}'
 
       - name: Build with Maven
         run: mvn package --batch-mode --fail-at-end

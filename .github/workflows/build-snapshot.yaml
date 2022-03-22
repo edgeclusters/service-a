@@ -76,13 +76,15 @@ jobs:
         id: release
         if: steps.extract_branch.branch == '${{ env.MAIN_BRANCH }}'
         run: |
+
+          echo "###########: ${{ steps.extract_branch.branch }}"
+
+
           mvn versions:set -DremoveSnapshot
           mvn versions:commit
 
           export APP_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "::set-output name=appVersion::$APP_VERSION"
-
-          echo $(date) > xxx
 
           git config --global user.name "actions"
           git config --global user.email "${{ needs.common.outputs.gitUserEmail }}"

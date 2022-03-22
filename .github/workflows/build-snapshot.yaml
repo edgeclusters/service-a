@@ -134,9 +134,15 @@ jobs:
 
       - name: Upload to Nexus
         run: |
+          if [[ '${{ steps.extract_branch.outputs.currentBranch }}' == '${{ env.DEVELOP_BRANCH }}' ]]; then
+            export SETTINGS_REPOSITORY_ID=nexus-snapshots
+          else
+            export SETTINGS_REPOSITORY_ID=nexus-releases
+          fi
+
           mvn deploy:deploy-file \
           -Durl=${{ needs.common.outputs.nexusSnapshotsRepoUrl }} \
-          -DrepositoryId=nexus-snapshots \
+          -DrepositoryId=$SETTINGS_REPOSITORY_ID \
           -Dfile=target/${{ steps.service-metadata.outputs.appArtifactId }}-${{ steps.service-metadata.outputs.appVersion }}.jar \
           -DgeneratePom=false \
           -DpomFile=pom.xml \
@@ -153,6 +159,12 @@ jobs:
       # SNAPSHOT!!!!
       - name: Download application JAR form Nexus
         run: |
+          if [[ '${{ steps.extract_branch.outputs.currentBranch }}' == '${{ env.DEVELOP_BRANCH }}' ]]; then
+            export NEXUS_REPOSITORY_ID=maven-snapshots
+          else
+            export NEXUS_REPOSITORY_ID=maven-releases
+          fi
+
           mkdir -p target
           curl -L -X GET \
           -u ${{ needs.common.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }} \
@@ -161,7 +173,7 @@ jobs:
           -d direction=desc \
           -d maven.extension=jar \
           -d maven.classifier= \
-          -d repository=maven-snapshots \
+          -d repository=$NEXUS_REPOSITORY_ID \
           -d maven.groupId=${{ needs.maven-build.outputs.appGroupId }} \
           -d maven.artifactId=${{ needs.maven-build.outputs.appArtifactId }} \
           -d maven.baseVersion=${{ needs.maven-build.outputs.appVersion }} \

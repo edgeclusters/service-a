@@ -76,7 +76,7 @@ jobs:
 
       - name: Remove SNAPSHOT, commit, tag and push
         id: release
-        if: steps.extract_branch.outputs.currentBranch == '${{ env.MAIN_BRANCH }}'
+        if: ${{ steps.extract_branch.outputs.currentBranch == env.MAIN_BRANCH }}
         run: |
           mvn versions:set -DremoveSnapshot
           mvn versions:commit
@@ -92,7 +92,7 @@ jobs:
           git push --all
 
       - uses: actions/checkout@v2
-        if: steps.extract_branch.outputs.currentBranch == '${{ env.MAIN_BRANCH }}'
+        if: ${{ steps.extract_branch.outputs.currentBranch == env.MAIN_BRANCH }}
 
       - name: Build with Maven
         run: mvn package --batch-mode --fail-at-end

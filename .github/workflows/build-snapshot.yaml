@@ -1,20 +1,56 @@
-name: build snapshot
+name: build
 
 on:
   push:
     branches:
-      - "feature/**"
+      - develop
+      - main
+  # pull_request:
+  #   branches:
+  #     - develop
+  #     - master
+
   workflow_dispatch:
 
 env:
+  MAIN_BRANCH: main
+  DEVELOP_BRANCH: develop
   MAVEN_SETTINGS_SECURITY: "<settingsSecurity><master>${{ secrets.MAVEN_MASTER_PASSWORD }}</master></settingsSecurity>"
   IMAGE_REPOSITORY: academy
-  CONTAINER_REGISTRY_ACADEMY_USER: robot-academy-pull-push
 
 jobs:
+  common:
+    name: Common tasks
+    runs-on: ubuntu-latest
+
+    outputs:
+      containerRegistryHost: ${{ steps.common.outputs.containerRegistryHost }}
+      helmRegistryHost: ${{ steps.common.outputs.helmRegistryHost }}
+      helmRegistryPushUser: ${{ steps.common.outputs.helmRegistryPushUser }}
+      nexusBaseUrl: ${{ steps.common.outputs.nexusBaseUrl }}
+      nexusUser: ${{ steps.common.outputs.nexusUser }}
+      nexusSnapshotsRepoUrl: ${{ steps.common.outputs.nexusSnapshotsRepoUrl }}
+      nexusReleasesRepoUrl: ${{ steps.common.outputs.nexusReleasesRepoUrl }}
+      targetPlatforms: ${{ steps.common.outputs.targetPlatforms }}
+      containerRegistryUser: ${{ steps.common.outputs.containerRegistryUser }}
+      gitUserEmail: ${{ steps.common.outputs.gitUserEmail }}
+
+    steps:
+      - uses: edgeclusters/common-tasks@v1
+        id: common
+        with:
+          accessToken: ${{ secrets.COMMON_REPO_ACCESS_TOKEN }}
+
   maven-build:
     name: Maven build
+    needs: common
     runs-on: ubuntu-latest
+
+    outputs:
+      appGroupId: ${{ steps.service-metadata.outputs.appGroupId }}
+      appArtifactId: ${{ steps.service-metadata.outputs.appArtifactId }}
+      appVersion: ${{ steps.service-metadata.outputs.appVersion }}
+      appCommitId: ${{ steps.service-metadata.outputs.appCommitId }}
 
     steps:
       - uses: actions/checkout@v2
@@ -26,121 +62,70 @@ jobs:
           java-version: "17"
           cache: maven
 
-      - name: Get application metadata from pom.xml
+      - name: Extract branch name
+        id: extract_branch
         run: |
-          export SERVICE_NAME=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
-          export SERVICE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          export COMMIT_ID_SHORT=$(git rev-parse --short "$GITHUB_SHA")
+          export CURRENT_BRANCH=$(echo ${GITHUB_REF#refs/heads/})
+          echo "::set-output name=currentBranch::$CURRENT_BRANCH"
 
-          echo "SERVICE_NAME=$SERVICE_NAME" >> $GITHUB_ENV
-          echo "SERVICE_VERSION=$SERVICE_VERSION" >> $GITHUB_ENV
-          echo "COMMIT_ID_SHORT=$COMMIT_ID_SHORT" >> $GITHUB_ENV
+      - name: Get application metadata from pom.xml
+        id: service-metadata
+        uses: edgeclusters/extract-pom-metadata@v1
+        with:
+          pomDir: .
 
-          echo "::debug::SERVICE_NAME: $SERVICE_NAME, SERVICE_VERSION: $SERVICE_VERSION, COMMIT_ID_SHORT: $COMMIT_ID_SHORT"
+      - name: Remove SNAPSHOT, commit, tag and push
+        id: release
+        if: ${{ steps.extract_branch.outputs.currentBranch == env.MAIN_BRANCH }}
+        run: |
+          mvn versions:set -DremoveSnapshot
+          mvn versions:commit
+
+          export APP_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "::set-output name=appVersion::$APP_VERSION"
+
+          git config --global user.name "actions"
+          git config --global user.email "${{ needs.common.outputs.gitUserEmail }}"
+          git add -A
+          git commit -m "Release $APP_VERSION"
+          git tag $APP_VERSION
+          git push --all
+
+      - uses: actions/checkout@v2
+        if: ${{ steps.extract_branch.outputs.currentBranch == env.MAIN_BRANCH }}
 
       - name: Build with Maven
-        run: |
-          mvn package --batch-mode --fail-at-end
-          mv target/${{ env.SERVICE_NAME }}-${{ env.SERVICE_VERSION }}.jar target/app.jar
-
-      - name: Package Helm chart
-        run: |
-          helm package \
-          --app-version ${{ env.SERVICE_VERSION }} \
-          --version ${{ env.SERVICE_VERSION }} \
-          helm
-          mv ${{ env.SERVICE_NAME }}-${{ env.SERVICE_VERSION }}.tgz chart.tgz
-
-      - name: Upload Helm chart
-        uses: actions/upload-artifact@v3
-        with:
-          name: app-chart
-          path: chart.tgz
-          retention-days: 1
-
-      - name: Upload application JAR
-        uses: actions/upload-artifact@v3
-        with:
-          name: app-jar
-          path: target/app.jar
-          retention-days: 1
-
-      - name: Upload Dockerfile
-        uses: actions/upload-artifact@v3
-        with:
-          name: dockerfile
-          path: Dockerfile
-          retention-days: 1
-
-      - name: Upload pom.xml
-        uses: actions/upload-artifact@v3
-        with:
-          name: pom
-          path: pom.xml
-          retention-days: 1
+        run: mvn package --batch-mode --fail-at-end
 
       - name: Publish Test Report
         if: ${{ always() }}
         uses: scacap/action-surefire-report@v1.0.13
 
-  helm-push:
-    needs: maven-build
-    name: Push Helm chart to Helm registry
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout common environment values
-        uses: actions/checkout@v2
-        with:
-          repository: edgeclusters/academy-common
-          path: common
-          token: ${{ secrets.COMMON_REPO_ACCESS_TOKEN }}
-
-      - name: Merge common environment values
-        run: cat common/config.env >> $GITHUB_ENV
-
-      - name: Download Helm chart archive
-        uses: actions/download-artifact@v3
-        with:
-          name: app-chart
+      - name: Package Helm chart
+        run: |
+          helm package \
+          --app-version ${{ steps.service-metadata.outputs.appVersion }} \
+          --version ${{ steps.service-metadata.outputs.appVersion }} \
+          helm
 
       - name: Login to registry (push)
         uses: docker/login-action@v1
         with:
-          registry: ${{ env.CONTAINER_REGISTRY_HOSTNAME }}
-          username: ${{ env.HELM_REGISTRY_USER_PUSH }}
+          registry: ${{ needs.common.outputs.containerRegistryHost }}
+          username: ${{ needs.common.outputs.helmRegistryPushUser }}
           password: ${{ secrets.HELM_REGISTRY_PASSWORD }}
 
       - name: Push to registry
-        run: helm push chart.tgz oci://${{ env.HELM_REGISTRY_HOSTNAME }}/${{ env.IMAGE_REPOSITORY }}
+        run: |
+          helm push ${{ steps.service-metadata.outputs.appArtifactId }}-${{ steps.service-metadata.outputs.appVersion }}.tgz \
+          oci://${{ needs.common.outputs.containerRegistryHost }}/${{ env.IMAGE_REPOSITORY }}
 
-  nexus-upload:
-    needs: maven-build
-    name: Upload application JAR to Nexus
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout common environment values
+      - name: Checkout common environment repository
         uses: actions/checkout@v2
         with:
           repository: edgeclusters/academy-common
-          path: common
           token: ${{ secrets.COMMON_REPO_ACCESS_TOKEN }}
-
-      - name: Merge common environment values
-        run: cat common/config.env >> $GITHUB_ENV
-
-      - name: Playing with workflow commands
-        id: app-jar-file-name
-        run: |
-          echo "::debug::Setting JAR_FILE output"
-          echo "::set-output name=JAR_FILE::app.jar"
-          echo "::warning::Remove this step in the future!"
-
-      - name: Download application JAR
-        uses: actions/download-artifact@v3
-        with:
-          name: app-jar
+          path: common
 
       - name: Prepare maven settings-security.xml
         run: |
@@ -149,69 +134,64 @@ jobs:
 
       - name: Upload to Nexus
         run: |
-          unzip ${{ steps.app-jar-file-name.outputs.JAR_FILE }}
-          export POM_LOCATION=$(find META-INF/maven -name pom.xml)
+          if [[ '${{ steps.extract_branch.outputs.currentBranch }}' == '${{ env.DEVELOP_BRANCH }}' ]]; then
+            export SETTINGS_REPOSITORY_ID=nexus-snapshots
+          else
+            export SETTINGS_REPOSITORY_ID=nexus-releases
+          fi
+
           mvn deploy:deploy-file \
-          -Durl=${{ env.NEXUS_SNAPSHOTS_REPO_URL }} \
-          -DrepositoryId=nexus-snapshots \
-          -Dfile=${{ steps.app-jar-file-name.outputs.JAR_FILE }} \
+          -Durl=${{ needs.common.outputs.nexusSnapshotsRepoUrl }} \
+          -DrepositoryId=$SETTINGS_REPOSITORY_ID \
+          -Dfile=target/${{ steps.service-metadata.outputs.appArtifactId }}-${{ steps.service-metadata.outputs.appVersion }}.jar \
           -DgeneratePom=false \
-          -DpomFile=$POM_LOCATION \
+          -DpomFile=pom.xml \
           --settings common/maven/settings.xml
 
   docker-image:
-    needs: maven-build
+    needs: [common, maven-build]
     name: Build and push multiplatform container image
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout common environment values
-        uses: actions/checkout@v2
-        with:
-          repository: edgeclusters/academy-common
-          path: common
-          token: ${{ secrets.COMMON_REPO_ACCESS_TOKEN }}
+      - uses: actions/checkout@v2
 
-      - name: Merge common environment values
-        run: cat common/config.env >> $GITHUB_ENV
+      # SNAPSHOT!!!!
+      - name: Download application JAR form Nexus
+        run: |
+          if [[ '${{ steps.extract_branch.outputs.currentBranch }}' == '${{ env.DEVELOP_BRANCH }}' ]]; then
+            export NEXUS_REPOSITORY_ID=maven-snapshots
+          else
+            export NEXUS_REPOSITORY_ID=maven-releases
+          fi
 
-      - name: Download application JAR
-        uses: actions/download-artifact@v3
-        with:
-          name: app-jar
-          path: target
-
-      - name: Download Dockerfile
-        uses: actions/download-artifact@v3
-        with:
-          name: dockerfile
-
-      - name: Download pom.xml
-        uses: actions/download-artifact@v3
-        with:
-          name: pom
+          mkdir -p target
+          curl -L -X GET \
+          -u ${{ needs.common.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }} \
+          -G "${{ needs.common.outputs.nexusBaseUrl }}/service/rest/v1/search/assets/download" \
+          -d sort=version \
+          -d direction=desc \
+          -d maven.extension=jar \
+          -d maven.classifier= \
+          -d repository=$NEXUS_REPOSITORY_ID \
+          -d maven.groupId=${{ needs.maven-build.outputs.appGroupId }} \
+          -d maven.artifactId=${{ needs.maven-build.outputs.appArtifactId }} \
+          -d maven.baseVersion=${{ needs.maven-build.outputs.appVersion }} \
+          --output target/app.jar
 
       - name: Prepare helper variables
+        id: image
         run: |
-          tree
-
-          export SERVICE_NAME=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
-          echo "SERVICE_NAME=$SERVICE_NAME" >> $GITHUB_ENV
-
-          export SERVICE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          echo "SERVICE_VERSION=$SERVICE_VERSION" >> $GITHUB_ENV
-
-          echo "IMAGE_FQN=$(echo ${{ env.CONTAINER_REGISTRY_HOSTNAME }}/${{ env.IMAGE_REPOSITORY }}/$SERVICE_NAME)" >> $GITHUB_ENV
-
-          export PLATFORMS_TEMP=${{ env.TARGET_PLATFORMS }}
-          echo "PLATFORMS=$(echo ${PLATFORMS_TEMP//linux\//})" >> $GITHUB_ENV
+          export IMAGE_FQN=$(echo ${{ needs.common.outputs.containerRegistryHost }}/${{ env.IMAGE_REPOSITORY }}/${{ needs.maven-build.outputs.appArtifactId }})
+          echo "::set-output name=imageFqn::$IMAGE_FQN"
+          export PLATFORMS_TEMP=${{ needs.common.outputs.targetPlatforms }}
+          echo "::set-output name=targetArchitectures::$(echo ${PLATFORMS_TEMP//linux\//})"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
         with:
-          # image: tonistiigi/binfmt:qemu-v6.1.0
           image: tonistiigi/binfmt:qemu-v6.2.0
-          platforms: ${{ env.PLATFORMS }}
+          platforms: ${{ steps.image.outputs.targetArchitectures }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -219,17 +199,15 @@ jobs:
       - name: Login to registry (push)
         uses: docker/login-action@v1
         with:
-          registry: ${{ env.CONTAINER_REGISTRY_HOSTNAME }}
-          username: ${{ env.CONTAINER_REGISTRY_ACADEMY_USER }}
+          registry: ${{ needs.common.outputs.containerRegistryHost }}
+          username: ${{ needs.common.outputs.containerRegistryUser }}
           password: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
 
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v3
         with:
-          # list of Docker images to use as base name for tags
-          images: ${{ env.IMAGE_FQN }}
-          # generate Docker tags based on the following events/attributes
+          images: ${{ steps.image.outputs.imageFqn }}
           tags: |
             type=schedule
             type=ref,event=branch
@@ -243,11 +221,12 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          build-args: BUILD_ALL_CLIS=false
-          platforms: ${{ env.TARGET_PLATFORMS }}
+          build-args: |
+            BUILD_ALL_CLIS=false
+            JAR_FILE=target/app.jar
+          platforms: ${{ needs.common.outputs.targetPlatforms }}
           push: true
           tags: |
-            "${{ env.IMAGE_FQN }}:${{ env.SERVICE_VERSION }}"
-            "${{ env.IMAGE_FQN }}:latest"
+            "${{ steps.image.outputs.imageFqn }}:${{ needs.maven-build.outputs.appVersion }}"
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.IMAGE_FQN }}:latest
+          cache-from: type=registry,ref=${{ steps.image.outputs.imageFqn }}:latest

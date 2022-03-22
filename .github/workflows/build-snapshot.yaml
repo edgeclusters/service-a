@@ -72,12 +72,6 @@ jobs:
         with:
           pomDir: .
 
-      - name: Configure git
-        if: steps.extract_branch.branch == '${{ env.MAIN_BRANCH }}'
-        run: |
-          git config --global user.name 'actions'
-          git config --global user.email '${{ needs.common.outputs.gitUserEmail }}'
-
       - name: Remove SNAPSHOT, commit, tag and push
         id: release
         if: steps.extract_branch.branch == '${{ env.MAIN_BRANCH }}'
@@ -88,6 +82,13 @@ jobs:
           export APP_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "::set-output name=appVersion::$APP_VERSION"
 
+          echo "======================"
+          pwd
+          git rev-parse --show-toplevel
+          echo "======================"
+
+          git config --global user.name 'actions'
+          git config --global user.email '${{ needs.common.outputs.gitUserEmail }}'
           git add -A
           git commit -m "Release ($APP_VERSION)"
           git tag $APP_VERSION

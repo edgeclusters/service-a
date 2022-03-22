@@ -81,6 +81,9 @@ jobs:
         run: |
 
           echo "###########: ${{ steps.extract_branch.branch }}"
+          echo "GITHUB_REF: ${GITHUB_REF}"
+          echo "github.ref: ${{ github.ref }}"
+          echo "github.head_ref: ${{ github.head_ref }}"
 
 
           mvn versions:set -DremoveSnapshot

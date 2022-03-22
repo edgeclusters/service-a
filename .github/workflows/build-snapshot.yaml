@@ -63,14 +63,11 @@ jobs:
           cache: maven
 
       - name: Extract branch name
-        run: |
-          echo "::set-output name=branch::$(echo ${GITHUB_REF#refs/heads/})"
-          
-          
-          echo "===========> ${GITHUB_REF#refs/heads/}"
-
-          
         id: extract_branch
+        run: |
+          echo "::set-output name=branch::$(echo ${GITHUB_REF##*/})"
+
+          echo "===========> ${GITHUB_REF##*/}"
 
       - name: Get application metadata from pom.xml
         id: service-metadata

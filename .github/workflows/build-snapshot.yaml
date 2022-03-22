@@ -66,7 +66,7 @@ jobs:
         id: extract_branch
         run: |
           export CURRENT_BRANCH=$(echo ${GITHUB_REF##*/})
-          echo "::set-output name=branch::$CURRENT_BRANCH"
+          echo "::set-output name=currentBranch::$CURRENT_BRANCH"
 
           echo "===========> $CURRENT_BRANCH"
 
@@ -78,10 +78,10 @@ jobs:
 
       - name: Remove SNAPSHOT, commit, tag and push
         id: release
-        if: steps.extract_branch.branch == '${{ env.MAIN_BRANCH }}'
+        if: steps.extract_branch.currentBranch == '${{ env.MAIN_BRANCH }}'
         run: |
 
-          echo "###########: ${{ steps.extract_branch.branch }}"
+          echo "###########: ${{ steps.extract_branch.currentBranch }}"
           echo "GITHUB_REF: ${GITHUB_REF}"
           echo "github.ref: ${{ github.ref }}"
           echo "github.head_ref: ${{ github.head_ref }}"
@@ -101,7 +101,7 @@ jobs:
           git push --all
 
       - uses: actions/checkout@v2
-        if: steps.extract_branch.branch == '${{ env.MAIN_BRANCH }}'
+        if: steps.extract_branch.currentBranch == '${{ env.MAIN_BRANCH }}'
 
       - name: Build with Maven
         run: mvn package --batch-mode --fail-at-end

@@ -65,9 +65,10 @@ jobs:
       - name: Extract branch name
         id: extract_branch
         run: |
-          echo "::set-output name=branch::$(echo ${GITHUB_REF##*/})"
+          export CURRENT_BRANCH=$(echo ${GITHUB_REF##*/})
+          echo "::set-output name=branch::$CURRENT_BRANCH"
 
-          echo "===========> ${GITHUB_REF##*/}"
+          echo "===========> $CURRENT_BRANCH"
 
       - name: Get application metadata from pom.xml
         id: service-metadata

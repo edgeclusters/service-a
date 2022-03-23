@@ -94,6 +94,13 @@ jobs:
       - uses: actions/checkout@v2
         if: ${{ steps.extract_branch.outputs.currentBranch == env.MAIN_BRANCH }}
 
+      - name: Get application metadata from pom.xml
+        if: ${{ steps.extract_branch.outputs.currentBranch == env.MAIN_BRANCH }}
+        id: service-metadata
+        uses: edgeclusters/extract-pom-metadata@v1
+        with:
+          pomDir: .
+
       - name: Build with Maven
         run: mvn package --batch-mode --fail-at-end
 

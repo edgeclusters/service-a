@@ -51,7 +51,7 @@ jobs:
       appArtifactId: ${{ steps.service-metadata.outputs.appArtifactId }}
       appVersion: ${{ steps.service-metadata.outputs.appVersion }}
       appCommitId: ${{ steps.service-metadata.outputs.appCommitId }}
-      appReleaseVersion: ${{ steps.service-metadata.outputs.appReleaseVersion }}
+      appReleaseVersion: ${{ steps.release.outputs.appReleaseVersion }}
 
     steps:
       - uses: actions/checkout@v2
@@ -92,8 +92,8 @@ jobs:
           git tag $APP_VERSION
           git push --all
 
-      - uses: actions/checkout@v2
-        if: ${{ steps.extract_branch.outputs.currentBranch == env.MAIN_BRANCH }}
+      # - uses: actions/checkout@v2
+      #   if: ${{ steps.extract_branch.outputs.currentBranch == env.MAIN_BRANCH }}
 
       - name: Build with Maven
         run: mvn package --batch-mode --fail-at-end
@@ -104,15 +104,15 @@ jobs:
 
       - name: Package Helm chart
         run: |
-          export VER=${{ steps.service-metadata.outputs.appReleaseVersion }}
+          export VER=${{ steps.release.outputs.appReleaseVersion }}
 
           if [ -z $VER ]; then
             export VER=${{ steps.service-metadata.outputs.appVersion }}
           fi
 
           helm package \
-          --app-version ${{ steps.service-metadata.outputs.appVersion }} \
-          --version ${{ steps.service-metadata.outputs.appVersion }} \
+          --app-version $VER \
+          --version $VER \
           helm
 
       - name: Login to registry (push)
@@ -124,7 +124,13 @@ jobs:
 
       - name: Push to registry
         run: |
-          helm push ${{ steps.service-metadata.outputs.appArtifactId }}-${{ steps.service-metadata.outputs.appVersion }}.tgz \
+          export VER=${{ steps.release.outputs.appReleaseVersion }}
+
+          if [ -z $VER ]; then
+            export VER=${{ steps.service-metadata.outputs.appVersion }}
+          fi
+
+          helm push ${{ steps.service-metadata.outputs.appArtifactId }}-$VER.tgz \
           oci://${{ needs.common.outputs.containerRegistryHost }}/${{ env.IMAGE_REPOSITORY }}
 
       - name: Checkout common environment repository
@@ -147,10 +153,16 @@ jobs:
             export SETTINGS_REPOSITORY_ID=nexus-releases
           fi
 
+          export VER=${{ steps.release.outputs.appReleaseVersion }}
+
+          if [ -z $VER ]; then
+            export VER=${{ steps.service-metadata.outputs.appVersion }}
+          fi          
+
           mvn deploy:deploy-file \
           -Durl=${{ needs.common.outputs.nexusSnapshotsRepoUrl }} \
           -DrepositoryId=$SETTINGS_REPOSITORY_ID \
-          -Dfile=target/${{ steps.service-metadata.outputs.appArtifactId }}-${{ steps.service-metadata.outputs.appVersion }}.jar \
+          -Dfile=target/${{ steps.service-metadata.outputs.appArtifactId }}-$VER.jar \
           -DgeneratePom=false \
           -DpomFile=pom.xml \
           --settings common/maven/settings.xml
@@ -163,13 +175,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      # SNAPSHOT!!!!
       - name: Download application JAR form Nexus
         run: |
           if [[ '${{ steps.extract_branch.outputs.currentBranch }}' == '${{ env.DEVELOP_BRANCH }}' ]]; then
             export NEXUS_REPOSITORY_ID=maven-snapshots
+            export VER=${{ needs.maven-build.outputs.appReleaseVersion }}
           else
             export NEXUS_REPOSITORY_ID=maven-releases
+            export VER=${{ needs.maven-build.outputs.appReleaseVersion }}
           fi
 
           mkdir -p target
@@ -183,7 +196,7 @@ jobs:
           -d repository=$NEXUS_REPOSITORY_ID \
           -d maven.groupId=${{ needs.maven-build.outputs.appGroupId }} \
           -d maven.artifactId=${{ needs.maven-build.outputs.appArtifactId }} \
-          -d maven.baseVersion=${{ needs.maven-build.outputs.appVersion }} \
+          -d maven.baseVersion=$VER \
           --output target/app.jar
 
       - name: Prepare helper variables
@@ -225,6 +238,22 @@ jobs:
             type=sha
 
       - name: Build and push
+        if: ${{ needs.maven-build.outputs.appReleaseVersion != '' }}
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          build-args: |
+            BUILD_ALL_CLIS=false
+            JAR_FILE=target/app.jar
+          platforms: ${{ needs.common.outputs.targetPlatforms }}
+          push: true
+          tags: |
+            "${{ steps.image.outputs.imageFqn }}:${{ needs.maven-build.outputs.appReleaseVersion }}"
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ steps.image.outputs.imageFqn }}:latest
+
+      - name: Build and push
+        if: ${{ needs.maven-build.outputs.appReleaseVersion == '' }}
         uses: docker/build-push-action@v2
         with:
           context: .
@@ -237,3 +266,4 @@ jobs:
             "${{ steps.image.outputs.imageFqn }}:${{ needs.maven-build.outputs.appVersion }}"
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ steps.image.outputs.imageFqn }}:latest
+

@@ -235,7 +235,7 @@ jobs:
             type=semver,pattern={{major}}
             type=sha
 
-      - name: Set APP_VERSION:
+      - name: Set APP_VERSION
         run: |
           if [[ '${{ needs.maven-build.outputs.appReleaseVersion }}' != '' ]]; then \
             export APP_VERSION=${{ needs.maven-build.outputs.appReleaseVersion }} \

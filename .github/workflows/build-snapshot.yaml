@@ -149,8 +149,10 @@ jobs:
         run: |
           if [[ '${{ steps.extract_branch.outputs.currentBranch }}' == '${{ env.DEVELOP_BRANCH }}' ]]; then
             export SETTINGS_REPOSITORY_ID=nexus-snapshots
+            export NEXUS_URL=${{ needs.common.outputs.nexusSnapshotsRepoUrl }}
           else
             export SETTINGS_REPOSITORY_ID=nexus-releases
+            export NEXUS_URL=${{ needs.common.outputs.nexusReleasessRepoUrl }}
           fi
 
           export VER=${{ steps.release.outputs.appReleaseVersion }}
@@ -160,7 +162,7 @@ jobs:
           fi          
 
           mvn deploy:deploy-file \
-          -Durl=${{ needs.common.outputs.nexusSnapshotsRepoUrl }} \
+          -Durl=$NEXUS_URL \
           -DrepositoryId=$SETTINGS_REPOSITORY_ID \
           -Dfile=target/${{ steps.service-metadata.outputs.appArtifactId }}-$VER.jar \
           -DgeneratePom=false \

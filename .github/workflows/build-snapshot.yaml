@@ -51,10 +51,7 @@ jobs:
       appArtifactId: ${{ steps.service-metadata.outputs.appArtifactId }}
       appVersion: ${{ steps.service-metadata.outputs.appVersion }}
       appCommitId: ${{ steps.service-metadata.outputs.appCommitId }}
-<<<<<<< HEAD
-=======
       appReleaseVersion: ${{ steps.service-metadata.outputs.appReleaseVersion }}
->>>>>>> develop
 
     steps:
       - uses: actions/checkout@v2
@@ -107,15 +104,12 @@ jobs:
 
       - name: Package Helm chart
         run: |
-<<<<<<< HEAD
-=======
           export VER=${{ steps.service-metadata.outputs.appReleaseVersion }}
 
           if [ -z $VER ]; then
             export VER=${{ steps.service-metadata.outputs.appVersion }}
           fi
 
->>>>>>> develop
           helm package \
           --app-version ${{ steps.service-metadata.outputs.appVersion }} \
           --version ${{ steps.service-metadata.outputs.appVersion }} \

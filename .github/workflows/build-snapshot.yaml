@@ -86,10 +86,7 @@ jobs:
           git add -A
           git commit -m "Release $APP_VERSION"
           git tag $APP_VERSION
-          git push --all
-
-      # - uses: actions/checkout@v2
-      #   if: ${{ steps.extract_branch.outputs.currentBranch == env.MAIN_BRANCH }}
+          git push --follow-tags
 
       - name: Build with Maven
         run: mvn package --batch-mode --fail-at-end
@@ -97,6 +94,24 @@ jobs:
       - name: Publish Test Report
         if: ${{ always() }}
         uses: scacap/action-surefire-report@v1.0.13
+
+      - name: Checkout ${{ env.DEVELOP_BRANCH}}
+        if: ${{ steps.extract_branch.outputs.currentBranch == env.MAIN_BRANCH }}
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ env.DEVELOP_BRANCH}}
+          path: next-snapshot
+
+      - name: Generate next snapshot
+        if: ${{ steps.extract_branch.outputs.currentBranch == env.MAIN_BRANCH }}
+        run: |
+          cd next-snapshot
+          mvn versions:set -DnextSnapshot=true
+          git config --global user.name "actions"
+          git config --global user.email "${{ needs.common.outputs.gitUserEmail }}"
+          git add -A
+          git commit -m "Next SNAPSHOT"
+          git push
 
       - name: Package Helm chart
         run: |

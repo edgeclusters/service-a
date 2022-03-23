@@ -148,7 +148,7 @@ jobs:
             export NEXUS_URL=${{ needs.common.outputs.nexusSnapshotsRepoUrl }}
           else
             export SETTINGS_REPOSITORY_ID=nexus-releases
-            export NEXUS_URL=${{ needs.common.outputs.nexusReleasessRepoUrl }}
+            export NEXUS_URL=${{ needs.common.outputs.nexusReleasesRepoUrl }}
           fi
 
           export VER=${{ steps.release.outputs.appReleaseVersion }}

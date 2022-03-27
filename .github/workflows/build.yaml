@@ -147,8 +147,14 @@ jobs:
 
       - name: Push the chart
         run: |
+          export VER=${{ steps.release.outputs.appReleaseVersion }}
+
+          if [ -z $VER ]; then
+            export VER=${{ steps.service-metadata.outputs.appVersion }}
+          fi
+          
           helm plugin install https://github.com/chartmuseum/helm-push.git
-          helm cm-push ./argocd-edgeclusters/ ${{ env.HELM_REPO_NAME }}
+          helm cm-push ${{ steps.service-metadata.outputs.appArtifactId }}-$VER.tgz ${{ env.HELM_REPO_NAME }}
 
       # FAILS WITH ARGOCD 2.3.2!!!
       # - name: Login to registry (push)

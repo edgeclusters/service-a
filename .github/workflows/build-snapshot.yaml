@@ -13,6 +13,7 @@ env:
   DEVELOP_BRANCH: develop
   MAVEN_SETTINGS_SECURITY: "<settingsSecurity><master>${{ secrets.MAVEN_MASTER_PASSWORD }}</master></settingsSecurity>"
   IMAGE_REPOSITORY: academy
+  HELM_REPO_NAME: academy
 
 jobs:
   common:
@@ -126,25 +127,47 @@ jobs:
           --version $VER \
           helm
 
-      - name: Login to registry (push)
-        uses: docker/login-action@v1
-        with:
-          registry: ${{ needs.common.outputs.containerRegistryHost }}
-          username: ${{ needs.common.outputs.containerRegistryUser }}
-          password: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
+      # - name: Deploy helm registry ca file
+      #   run: |
+      #     echo "${{ secrets.HELM_REGISTRY_CA }}" | base64 -d > ca.crt
 
-      - name: Push to registry
+      - name: Add helm repository
         run: |
-          export VER=${{ steps.release.outputs.appReleaseVersion }}
+          helm repo add \
+          --username=${{ steps.common.outputs.helmRegistryUser }} \
+          --password=${{ secrets.HELM_REGISTRY_PASSWORD }} \
+          --insecure-skip-tls-verify \
+          ${{ env.HELM_REPO_NAME }} \
+          ${{ steps.common.outputs.helmRegistryBaseUrl }}/${{ env.HELM_REPO_NAME }}
+          cd "${{ env.HELM_CHART_NAME }}"
 
-          if [ -z $VER ]; then
-            export VER=${{ steps.service-metadata.outputs.appVersion }}
-          fi
+          #--ca-file ca.crt \
 
-          helm push ${{ steps.service-metadata.outputs.appArtifactId }}-$VER.tgz \
-          oci://${{ needs.common.outputs.containerRegistryHost }}/${{ env.IMAGE_REPOSITORY }}
+      - name: Push the chart
+        run: |
+          helm plugin install https://github.com/chartmuseum/helm-push.git
+          helm cm-push ./argocd-edgeclusters/ ${{ env.HELM_REPO_NAME }}
 
-      - name: Checkout common environment repository
+      # FAILS WITH ARGOCD 2.3.2!!!
+      # - name: Login to registry (push)
+      #   uses: docker/login-action@v1
+      #   with:
+      #     registry: ${{ needs.common.outputs.containerRegistryHost }}
+      #     username: ${{ needs.common.outputs.containerRegistryUser }}
+      #     password: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
+
+      # - name: Push Helm chart to registry
+      #   run: |
+      #     export VER=${{ steps.release.outputs.appReleaseVersion }}
+
+      #     if [ -z $VER ]; then
+      #       export VER=${{ steps.service-metadata.outputs.appVersion }}
+      #     fi
+
+      #     helm push ${{ steps.service-metadata.outputs.appArtifactId }}-$VER.tgz \
+      #     oci://${{ needs.common.outputs.containerRegistryHost }}/${{ env.IMAGE_REPOSITORY }}
+
+       - name: Checkout common environment repository (Maven settings-security.xml)
         uses: actions/checkout@v2
         with:
           repository: edgeclusters/academy-common

@@ -22,7 +22,7 @@ jobs:
     outputs:
       containerRegistryHost: ${{ steps.common.outputs.containerRegistryHost }}
       helmRegistryHost: ${{ steps.common.outputs.helmRegistryHost }}
-      helmRegistryPushUser: ${{ steps.common.outputs.helmRegistryPushUser }}
+      helmRegistryUser: ${{ steps.common.outputs.helmRegistryUser }}
       nexusBaseUrl: ${{ steps.common.outputs.nexusBaseUrl }}
       nexusUser: ${{ steps.common.outputs.nexusUser }}
       nexusSnapshotsRepoUrl: ${{ steps.common.outputs.nexusSnapshotsRepoUrl }}
@@ -95,11 +95,11 @@ jobs:
         if: ${{ always() }}
         uses: scacap/action-surefire-report@v1.0.13
 
-      - name: Checkout ${{ env.DEVELOP_BRANCH}}
+      - name: Checkout ${{ env.DEVELOP_BRANCH }}
         if: ${{ steps.extract_branch.outputs.currentBranch == env.MAIN_BRANCH }}
         uses: actions/checkout@v2
         with:
-          ref: ${{ env.DEVELOP_BRANCH}}
+          ref: ${{ env.DEVELOP_BRANCH }}
           path: next-snapshot
 
       - name: Generate next snapshot
@@ -130,8 +130,8 @@ jobs:
         uses: docker/login-action@v1
         with:
           registry: ${{ needs.common.outputs.containerRegistryHost }}
-          username: ${{ needs.common.outputs.helmRegistryPushUser }}
-          password: ${{ secrets.HELM_REGISTRY_PASSWORD }}
+          username: ${{ needs.common.outputs.containerRegistryUser }}
+          password: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
 
       - name: Push to registry
         run: |

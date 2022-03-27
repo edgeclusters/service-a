@@ -23,6 +23,7 @@ jobs:
     outputs:
       containerRegistryHost: ${{ steps.common.outputs.containerRegistryHost }}
       containerRegistryUser: ${{ steps.common.outputs.containerRegistryUser }}
+      helmRegistryBaseUrl: ${{ steps.common.outputs.helmRegistryBaseUrl }}
       helmRegistryHost: ${{ steps.common.outputs.helmRegistryHost }}
       helmRegistryUser: ${{ steps.common.outputs.helmRegistryUser }}
       nexusBaseUrl: ${{ steps.common.outputs.nexusBaseUrl }}

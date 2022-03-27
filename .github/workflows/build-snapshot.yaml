@@ -21,6 +21,7 @@ jobs:
 
     outputs:
       containerRegistryHost: ${{ steps.common.outputs.containerRegistryHost }}
+      containerRegistryUser: ${{ steps.common.outputs.containerRegistryUser }}
       helmRegistryHost: ${{ steps.common.outputs.helmRegistryHost }}
       helmRegistryUser: ${{ steps.common.outputs.helmRegistryUser }}
       nexusBaseUrl: ${{ steps.common.outputs.nexusBaseUrl }}
@@ -28,14 +29,13 @@ jobs:
       nexusSnapshotsRepoUrl: ${{ steps.common.outputs.nexusSnapshotsRepoUrl }}
       nexusReleasesRepoUrl: ${{ steps.common.outputs.nexusReleasesRepoUrl }}
       targetPlatforms: ${{ steps.common.outputs.targetPlatforms }}
-      containerRegistryUser: ${{ steps.common.outputs.containerRegistryUser }}
       gitUserEmail: ${{ steps.common.outputs.gitUserEmail }}
 
     steps:
       - uses: edgeclusters/common-tasks@v1
         id: common
         with:
-          accessToken: ${{ secrets.COMMON_REPO_ACCESS_TOKEN }}
+          accessToken: ${{ secrets.ACCESS_TOKEN }}
 
   maven-build:
     name: Maven build
@@ -148,7 +148,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: edgeclusters/academy-common
-          token: ${{ secrets.COMMON_REPO_ACCESS_TOKEN }}
+          token: ${{ secrets.ACCESS_TOKEN }}
           path: common
 
       - name: Prepare maven settings-security.xml

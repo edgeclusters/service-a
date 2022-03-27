@@ -139,9 +139,9 @@ jobs:
           --insecure-skip-tls-verify \
           ${{ env.HELM_REPO_NAME }} \
           ${{ steps.common.outputs.helmRegistryBaseUrl }}/${{ env.HELM_REPO_NAME }}
-          cd "${{ env.HELM_CHART_NAME }}"
 
-          #--ca-file ca.crt \
+          # cd "${{ env.HELM_CHART_NAME }}"
+          #--ca-file ca.crt
 
       - name: Push the chart
         run: |
@@ -167,7 +167,7 @@ jobs:
       #     helm push ${{ steps.service-metadata.outputs.appArtifactId }}-$VER.tgz \
       #     oci://${{ needs.common.outputs.containerRegistryHost }}/${{ env.IMAGE_REPOSITORY }}
 
-       - name: Checkout common environment repository (Maven settings-security.xml)
+      - name: Checkout common environment repository (Maven settings-security.xml)
         uses: actions/checkout@v2
         with:
           repository: edgeclusters/academy-common

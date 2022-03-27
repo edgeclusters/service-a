@@ -139,7 +139,7 @@ jobs:
           --password=${{ secrets.HELM_REGISTRY_PASSWORD }} \
           --insecure-skip-tls-verify \
           ${{ env.HELM_REPO_NAME }} \
-          ${{ needs.common.outputs.helmRegistryBaseUrl }}/chartrepo
+          ${{ needs.common.outputs.helmRegistryBaseUrl }}/chartrepo/${{ env.HELM_REPO_NAME }}
 
 
           # cd "${{ env.HELM_CHART_NAME }}"

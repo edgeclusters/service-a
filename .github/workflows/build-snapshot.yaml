@@ -134,11 +134,11 @@ jobs:
       - name: Add helm repository
         run: |
           helm repo add \
-          --username=${{ steps.common.outputs.helmRegistryUser }} \
+          --username=${{ needs.common.outputs.helmRegistryUser }} \
           --password=${{ secrets.HELM_REGISTRY_PASSWORD }} \
           --insecure-skip-tls-verify \
           ${{ env.HELM_REPO_NAME }} \
-          ${{ steps.common.outputs.helmRegistryBaseUrl }}/${{ env.HELM_REPO_NAME }}
+          ${{ needs.common.outputs.helmRegistryBaseUrl }}/${{ env.HELM_REPO_NAME }}
 
           # cd "${{ env.HELM_CHART_NAME }}"
           #--ca-file ca.crt

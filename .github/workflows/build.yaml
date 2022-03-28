@@ -230,7 +230,7 @@ jobs:
           fi
 
           mkdir -p target
-          curl -L -X GET \
+          curl -fSL -X GET \
           -u ${{ needs.common.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }} \
           -G "${{ needs.common.outputs.nexusBaseUrl }}/service/rest/v1/search/assets/download" \
           -d sort=version \

@@ -49,6 +49,7 @@ jobs:
       appVersion: ${{ steps.service-metadata.outputs.appVersion }}
       appCommitId: ${{ steps.service-metadata.outputs.appCommitId }}
       appReleaseVersion: ${{ steps.release.outputs.appReleaseVersion }}
+      currentBranch: ${{ steps.release.outputs.currentBranch }}
 
     steps:
       - uses: actions/checkout@v2
@@ -220,7 +221,7 @@ jobs:
 
       - name: Download application JAR form Nexus
         run: |
-          if [[ '${{ steps.extract_branch.outputs.currentBranch }}' == '${{ env.DEVELOP_BRANCH }}' ]]; then
+          if [[ '${{ needs.maven-build.currentBranch }}' == '${{ env.DEVELOP_BRANCH }}' ]]; then
             export NEXUS_REPOSITORY_ID=maven-snapshots
             export VER=${{ needs.maven-build.outputs.appReleaseVersion }}
           else

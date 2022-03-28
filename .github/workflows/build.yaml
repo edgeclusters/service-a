@@ -229,6 +229,10 @@ jobs:
 
           export VER=${{ needs.maven-build.outputs.appReleaseVersion }}
 
+          if [ -z $VER ]; then
+            export VER=${{ needs.maven-build.outputs.appVersion }}
+          fi
+
           mkdir -p target
           curl -fsSL -X GET \
           -u ${{ needs.common.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }} \

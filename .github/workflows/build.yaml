@@ -221,16 +221,16 @@ jobs:
 
       - name: Download application JAR form Nexus
         run: |
-          if [[ '${{ needs.maven-build.currentBranch }}' == '${{ env.DEVELOP_BRANCH }}' ]]; then
+          if [[ '${{ needs.maven-build.outputs.currentBranch }}' == '${{ env.DEVELOP_BRANCH }}' ]]; then
             export NEXUS_REPOSITORY_ID=maven-snapshots
-            export VER=${{ needs.maven-build.outputs.appReleaseVersion }}
           else
             export NEXUS_REPOSITORY_ID=maven-releases
-            export VER=${{ needs.maven-build.outputs.appReleaseVersion }}
           fi
 
+          export VER=${{ needs.maven-build.outputs.appReleaseVersion }}
+
           mkdir -p target
-          curl -fSL -X GET \
+          curl -fsSL -X GET \
           -u ${{ needs.common.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }} \
           -G "${{ needs.common.outputs.nexusBaseUrl }}/service/rest/v1/search/assets/download" \
           -d sort=version \

@@ -49,7 +49,7 @@ jobs:
       appVersion: ${{ steps.service-metadata.outputs.appVersion }}
       appCommitId: ${{ steps.service-metadata.outputs.appCommitId }}
       appReleaseVersion: ${{ steps.release.outputs.appReleaseVersion }}
-      currentBranch: ${{ steps.release.outputs.currentBranch }}
+      currentBranch: ${{ steps.extract_branch.outputs.currentBranch }}
 
     steps:
       - uses: actions/checkout@v2

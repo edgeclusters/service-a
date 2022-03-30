@@ -26,11 +26,11 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
-# podAnnotations: {}
-podAnnotations:
-  vault.hashicorp.com/agent-inject: 'true'
-  vault.hashicorp.com/role: 'kube-app'
-  vault.hashicorp.com/agent-inject-secret-database-config.txt: 'kube/secrets/demo-secret'
+podAnnotations: {}
+# podAnnotations:
+#   vault.hashicorp.com/agent-inject: 'true'
+#   vault.hashicorp.com/role: 'kube-app'
+#   vault.hashicorp.com/agent-inject-secret-database-config.txt: 'kube/secrets/demo-secret'
 
 # podAnnotations:
 #   vault.hashicorp.com/agent-inject: 'true'

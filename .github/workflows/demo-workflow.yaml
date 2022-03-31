@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  maven-build:
     name: Maven build
     runs-on: ubuntu-latest
 

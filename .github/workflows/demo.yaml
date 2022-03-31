@@ -3,7 +3,7 @@ name: demo-workflow
 on:
   push:
     branches:
-    - '*'
+    - 'feature/*'
   workflow_dispatch:
 
 jobs:

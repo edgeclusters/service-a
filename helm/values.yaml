@@ -14,7 +14,7 @@ env:
   OTEL_METRICS_EXPORTER: none
   OTEL_RESOURCE_ATTRIBUTES: service.name=service-a
   OTEL_TRACES_EXPORTER: jaeger
-  OTEL_EXPORTER_JAEGER_ENDPOINT: http://simplest-collector.jaeger-operator.svc.cluster.local:14250
+  OTEL_EXPORTER_JAEGER_ENDPOINT: http://edge-cluster-jaeger-operator-jaeger-collector.jaeger-operator.svc.cluster.local:14250
   OTEL_EXPORTER_JAEGER_TIMEOUT: 10000
 
 serviceAccount:

@@ -28,13 +28,16 @@ serviceAccount:
 
 # podAnnotations: {}
 podAnnotations:
-  vault.hashicorp.com/agent-inject: "true"
-  vault.hashicorp.com/role: kube-app
-  vault.hashicorp.com/agent-inject-secret-password: kube/secrets/demo-secret
-  vault.hashicorp.com/agent-inject-template-password: |
-    {{ with secret "kube/secrets/demo-secret" -}}
-      export SECRET_PASSWORD="{{ .Data.password }}"
-    {{- end }}
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/actuator/prometheus"
+#   vault.hashicorp.com/agent-inject: "true"
+#   vault.hashicorp.com/role: kube-app
+#   vault.hashicorp.com/agent-inject-secret-password: kube/secrets/demo-secret
+#   vault.hashicorp.com/agent-inject-template-password: |
+#     {{ with secret "kube/secrets/demo-secret" -}}
+#       export SECRET_PASSWORD="{{ .Data.password }}"
+#     {{- end }}
 
 podSecurityContext: {}
   # fsGroup: 2000

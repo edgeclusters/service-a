@@ -1,4 +1,4 @@
-name: demo-workflow
+name: demo-build
 
 on:
   push:

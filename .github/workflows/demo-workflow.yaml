@@ -6,13 +6,6 @@ on:
       - "*"
   workflow_dispatch:
 
-env:
-  MAIN_BRANCH: main
-  DEVELOP_BRANCH: develop
-  MAVEN_SETTINGS_SECURITY: "<settingsSecurity><master>${{ secrets.MAVEN_MASTER_PASSWORD }}</master></settingsSecurity>"
-  IMAGE_REPOSITORY: academy
-  HELM_REPO_NAME: academy
-
 jobs:
   build:
     name: Maven build

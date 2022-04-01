@@ -1,11 +1,10 @@
-name: build
+name: build-app
 
 on:
   push:
     branches:
       - develop
       - main
-
   workflow_dispatch:
 
 env:
@@ -13,6 +12,7 @@ env:
   DEVELOP_BRANCH: develop
   MAVEN_SETTINGS_SECURITY: "<settingsSecurity><master>${{ secrets.MAVEN_MASTER_PASSWORD }}</master></settingsSecurity>"
   IMAGE_REPOSITORY: academy
+  HELM_REPO_NAME: academy
 
 jobs:
   common:
@@ -21,21 +21,22 @@ jobs:
 
     outputs:
       containerRegistryHost: ${{ steps.common.outputs.containerRegistryHost }}
+      containerRegistryUser: ${{ steps.common.outputs.containerRegistryUser }}
+      helmRegistryBaseUrl: ${{ steps.common.outputs.helmRegistryBaseUrl }}
       helmRegistryHost: ${{ steps.common.outputs.helmRegistryHost }}
-      helmRegistryPushUser: ${{ steps.common.outputs.helmRegistryPushUser }}
+      helmRegistryUser: ${{ steps.common.outputs.helmRegistryUser }}
       nexusBaseUrl: ${{ steps.common.outputs.nexusBaseUrl }}
       nexusUser: ${{ steps.common.outputs.nexusUser }}
       nexusSnapshotsRepoUrl: ${{ steps.common.outputs.nexusSnapshotsRepoUrl }}
       nexusReleasesRepoUrl: ${{ steps.common.outputs.nexusReleasesRepoUrl }}
       targetPlatforms: ${{ steps.common.outputs.targetPlatforms }}
-      containerRegistryUser: ${{ steps.common.outputs.containerRegistryUser }}
       gitUserEmail: ${{ steps.common.outputs.gitUserEmail }}
 
     steps:
       - uses: edgeclusters/common-tasks@v1
         id: common
         with:
-          accessToken: ${{ secrets.COMMON_REPO_ACCESS_TOKEN }}
+          accessToken: ${{ secrets.ACCESS_TOKEN }}
 
   maven-build:
     name: Maven build
@@ -48,6 +49,7 @@ jobs:
       appVersion: ${{ steps.service-metadata.outputs.appVersion }}
       appCommitId: ${{ steps.service-metadata.outputs.appCommitId }}
       appReleaseVersion: ${{ steps.release.outputs.appReleaseVersion }}
+      currentBranch: ${{ steps.extract_branch.outputs.currentBranch }}
 
     steps:
       - uses: actions/checkout@v2
@@ -95,11 +97,11 @@ jobs:
         if: ${{ always() }}
         uses: scacap/action-surefire-report@v1.0.13
 
-      - name: Checkout ${{ env.DEVELOP_BRANCH}}
+      - name: Checkout ${{ env.DEVELOP_BRANCH }}
         if: ${{ steps.extract_branch.outputs.currentBranch == env.MAIN_BRANCH }}
         uses: actions/checkout@v2
         with:
-          ref: ${{ env.DEVELOP_BRANCH}}
+          ref: ${{ env.DEVELOP_BRANCH }}
           path: next-snapshot
 
       - name: Generate next snapshot
@@ -126,29 +128,58 @@ jobs:
           --version $VER \
           helm
 
-      - name: Login to registry (push)
-        uses: docker/login-action@v1
-        with:
-          registry: ${{ needs.common.outputs.containerRegistryHost }}
-          username: ${{ needs.common.outputs.helmRegistryPushUser }}
-          password: ${{ secrets.HELM_REGISTRY_PASSWORD }}
+      # - name: Deploy helm registry ca file
+      #   run: |
+      #     echo "${{ secrets.HELM_REGISTRY_CA }}" | base64 -d > ca.crt
 
-      - name: Push to registry
+      - name: Add helm repository
+        run: |
+          helm repo add \
+          --username=${{ needs.common.outputs.helmRegistryUser }} \
+          --password=${{ secrets.HELM_REGISTRY_PASSWORD }} \
+          --insecure-skip-tls-verify \
+          ${{ env.HELM_REPO_NAME }} \
+          ${{ needs.common.outputs.helmRegistryBaseUrl }}/chartrepo/${{ env.HELM_REPO_NAME }}
+
+
+          # cd "${{ env.HELM_CHART_NAME }}"
+          #--ca-file ca.crt
+
+      - name: Push the chart
         run: |
           export VER=${{ steps.release.outputs.appReleaseVersion }}
 
           if [ -z $VER ]; then
             export VER=${{ steps.service-metadata.outputs.appVersion }}
           fi
+          
+          helm plugin install https://github.com/chartmuseum/helm-push.git
+          helm cm-push ${{ steps.service-metadata.outputs.appArtifactId }}-$VER.tgz ${{ env.HELM_REPO_NAME }}
 
-          helm push ${{ steps.service-metadata.outputs.appArtifactId }}-$VER.tgz \
-          oci://${{ needs.common.outputs.containerRegistryHost }}/${{ env.IMAGE_REPOSITORY }}
+      # FAILS WITH ARGOCD 2.3.2!!!
+      # - name: Login to registry (push)
+      #   uses: docker/login-action@v1
+      #   with:
+      #     registry: ${{ needs.common.outputs.containerRegistryHost }}
+      #     username: ${{ needs.common.outputs.containerRegistryUser }}
+      #     password: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
 
-      - name: Checkout common environment repository
+      # - name: Push Helm chart to registry
+      #   run: |
+      #     export VER=${{ steps.release.outputs.appReleaseVersion }}
+
+      #     if [ -z $VER ]; then
+      #       export VER=${{ steps.service-metadata.outputs.appVersion }}
+      #     fi
+
+      #     helm push ${{ steps.service-metadata.outputs.appArtifactId }}-$VER.tgz \
+      #     oci://${{ needs.common.outputs.containerRegistryHost }}/${{ env.IMAGE_REPOSITORY }}
+
+      - name: Checkout common environment repository (Maven settings-security.xml)
         uses: actions/checkout@v2
         with:
           repository: edgeclusters/academy-common
-          token: ${{ secrets.COMMON_REPO_ACCESS_TOKEN }}
+          token: ${{ secrets.ACCESS_TOKEN }}
           path: common
 
       - name: Prepare maven settings-security.xml
@@ -190,16 +221,20 @@ jobs:
 
       - name: Download application JAR form Nexus
         run: |
-          if [[ '${{ steps.extract_branch.outputs.currentBranch }}' == '${{ env.DEVELOP_BRANCH }}' ]]; then
+          if [[ '${{ needs.maven-build.outputs.currentBranch }}' == '${{ env.DEVELOP_BRANCH }}' ]]; then
             export NEXUS_REPOSITORY_ID=maven-snapshots
-            export VER=${{ needs.maven-build.outputs.appReleaseVersion }}
           else
             export NEXUS_REPOSITORY_ID=maven-releases
-            export VER=${{ needs.maven-build.outputs.appReleaseVersion }}
+          fi
+
+          export VER=${{ needs.maven-build.outputs.appReleaseVersion }}
+
+          if [ -z $VER ]; then
+            export VER=${{ needs.maven-build.outputs.appVersion }}
           fi
 
           mkdir -p target
-          curl -L -X GET \
+          curl -fsSL -X GET \
           -u ${{ needs.common.outputs.nexusUser }}:${{ secrets.NEXUS_PASSWORD }} \
           -G "${{ needs.common.outputs.nexusBaseUrl }}/service/rest/v1/search/assets/download" \
           -d sort=version \

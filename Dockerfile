@@ -19,17 +19,17 @@ ARG APP_USER_UID=1000
 ARG APP_USER_GID=1000
 ARG JAR_FILE=target/*.jar
 
-RUN addgroup --gid ${APP_USER_GID} ${APP_USER} \
-    && adduser \
-    --gecos "First Last,RoomNumber,WorkPhone,HomePhone" \
-    --quiet \
-    --disabled-password \
-    --no-create-home \
-    --uid ${APP_USER_UID} \
-    --ingroup ${APP_USER} \
-    ${APP_USER}
+# RUN addgroup --gid ${APP_USER_GID} ${APP_USER} \
+#     && adduser \
+#     --gecos "First Last,RoomNumber,WorkPhone,HomePhone" \
+#     --quiet \
+#     --disabled-password \
+#     --no-create-home \
+#     --uid ${APP_USER_UID} \
+#     --ingroup ${APP_USER} \
+#     ${APP_USER}
 
-USER ${APP_USER}
+# USER ${APP_USER}
 
 COPY ${JAR_FILE} /app.jar
 COPY --from=builder /opentelemetry-javaagent.jar /

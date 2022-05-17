@@ -1,10 +1,10 @@
 name: build-app
 
 on:
-  push:
-    branches:
-      - develop
-      - main
+  # push:
+  #   branches:
+  #     - develop
+  #     - main
   workflow_dispatch:
 
 env:

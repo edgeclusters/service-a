@@ -11,7 +11,8 @@ WORKDIR /
 RUN wget --no-verbose https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v${OTEL_AGENT_VERSION}/opentelemetry-javaagent.jar
 
 
-FROM reg.edgeclusters.com/docker-hub-proxy/library/openjdk:17-jdk-slim-buster
+# FROM reg.edgeclusters.com/docker-hub-proxy/library/openjdk:17-jdk-slim-buster
+FROM gcr.io/distroless/java:11
 
 ARG APP_USER=spring
 ARG APP_USER_UID=1000

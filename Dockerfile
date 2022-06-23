@@ -1,6 +1,6 @@
 FROM reg.edgeclusters.com/docker-hub-proxy/library/alpine as builder
 
-ARG OTEL_AGENT_VERSION=1.12.0
+ARG OTEL_AGENT_VERSION=1.15.0
 
 RUN apk --quiet update \
     && apk --quiet add wget \

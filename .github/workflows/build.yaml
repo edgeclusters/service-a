@@ -86,7 +86,8 @@ jobs:
           git config --global user.name "actions"
           git config --global user.email "${{ needs.common.outputs.gitUserEmail }}"
           git add -A
-          git diff-index --quiet HEAD || git commit -m "Release $APP_VERSION"
+          # git diff-index --quiet HEAD || git commit -m "Release $APP_VERSION"
+          git commit -m "Release $APP_VERSION"
           git tag $APP_VERSION
           git push --follow-tags
 
